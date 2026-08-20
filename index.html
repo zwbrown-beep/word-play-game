@@ -6,7 +6,7 @@
   <title>Word Play - Sony Music</title>
   <style>
     :root {
-      --brand-color: #ffffff;
+      --brand-color: #6aaa64;
       --color-correct: #6aaa64;
       --color-present: #c9b458;
       --color-absent: #3a3a3c;
@@ -47,6 +47,7 @@
       font-weight: 700;
       text-transform: uppercase;
       color: var(--brand-color);
+      transition: color 0.3s ease;
     }
 
     h2 {
@@ -231,18 +232,42 @@
       margin: 15px 0;
       display: inline-block;
       width: 100%;
+      transition: color 0.3s ease;
     }
 
     .form-group { margin-bottom: 15px; text-align: left; }
     .form-group label { display: block; margin-bottom: 5px; font-size: 0.85rem; color: #aaa; }
-    .form-group input {
+    .form-group input[type="text"] {
       width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #444;
       background: #2a2a2a; color: white; font-size: 1rem; box-sizing: border-box;
     }
 
+    .color-picker-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #2a2a2a;
+      padding: 8px 12px;
+      border-radius: 5px;
+      border: 1px solid #444;
+    }
+
+    .color-picker-wrapper input[type="color"] {
+      -webkit-appearance: none;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      background: none;
+    }
+
+    .color-picker-wrapper input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    .color-picker-wrapper input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+
     .btn-group { display: flex; gap: 10px; margin-top: 20px; }
     .btn { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.95rem; }
-    .btn-save { background: var(--color-correct); color: white; }
+    .btn-save { background: var(--color-correct); color: white; transition: background 0.3s ease; }
     .btn-cancel { background: #444; color: white; }
   </style>
 </head>
@@ -321,6 +346,13 @@
         <label>Target Word (4, 5, or 6 Letters)</label>
         <input type="text" id="admin-word" placeholder="e.g. ALBUM" maxlength="6">
       </div>
+      <div class="form-group">
+        <label>Artist Brand Color</label>
+        <div class="color-picker-wrapper">
+          <input type="color" id="admin-color" value="#6aaa64">
+          <span id="admin-color-hex" style="font-size: 0.9rem; color: #ccc; font-weight: bold;">#6AAA64</span>
+        </div>
+      </div>
       <div class="btn-group">
         <button class="btn btn-cancel" onclick="closeAdmin()">Cancel</button>
         <button class="btn btn-save" onclick="saveAdmin()">Save & Launch</button>
@@ -332,6 +364,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     let targetWord = (urlParams.get('word') || 'ALBUM').toUpperCase();
     let guestName = urlParams.get('guest') || 'Special Guest';
+    let brandColor = urlParams.get('color') ? `#${urlParams.get('color')}` : '#6aaa64';
 
     let wordLength = targetWord.length;
     const maxAttempts = 6;
@@ -339,12 +372,18 @@
     let currentGuess = '';
     let isGameOver = false;
 
+    function applyBrandColor(color) {
+      document.documentElement.style.setProperty('--brand-color', color);
+      document.documentElement.style.setProperty('--color-correct', color);
+    }
+
     function initGame() {
       wordLength = targetWord.length;
       currentAttempt = 0;
       currentGuess = '';
       isGameOver = false;
 
+      applyBrandColor(brandColor);
       document.getElementById('subtitle').innerText = `KOJI VS. ${guestName}`;
       closeResult();
 
@@ -406,7 +445,7 @@
       const targetArr = targetWord.split('');
       const tileStates = Array(wordLength).fill('absent');
 
-      // Exact matches (Green)
+      // Exact matches (Brand Color / Green)
       guessArr.forEach((char, i) => {
         if (char === targetArr[i]) {
           tileStates[i] = 'correct';
@@ -490,6 +529,8 @@
     function openAdmin() {
       document.getElementById('admin-guest').value = guestName;
       document.getElementById('admin-word').value = targetWord;
+      document.getElementById('admin-color').value = brandColor;
+      document.getElementById('admin-color-hex').innerText = brandColor.toUpperCase();
       document.getElementById('admin-modal').style.display = 'flex';
     }
 
@@ -500,6 +541,7 @@
     function saveAdmin() {
       const g = document.getElementById('admin-guest').value.trim();
       const w = document.getElementById('admin-word').value.trim().toUpperCase();
+      const c = document.getElementById('admin-color').value;
 
       if (w.length < 4 || w.length > 6) {
         alert('Please enter a 4, 5, or 6 letter word.');
@@ -508,9 +550,15 @@
 
       guestName = g || 'Special Guest';
       targetWord = w;
+      brandColor = c;
       closeAdmin();
       initGame();
     }
+
+    // Color Picker UI Updates
+    document.getElementById('admin-color').addEventListener('input', (e) => {
+      document.getElementById('admin-color-hex').innerText = e.target.value.toUpperCase();
+    });
 
     // Keyboard Listeners
     document.querySelectorAll('.key').forEach(k => {
