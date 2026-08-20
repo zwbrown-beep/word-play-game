@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Word Play - Sony Music</title>
+  <title>Koji's Word Play - Sony Music</title>
   <style>
     :root {
       --brand-color: #6aaa64;
@@ -26,7 +26,7 @@
       justify-content: space-between;
       height: 100vh;
       margin: 0;
-      padding: 5px 10px 15px 10px;
+      padding: 5px 10px 10px 10px; /* Reduced bottom padding to protect keyboard fit */
       touch-action: manipulation;
       overflow: hidden;
       position: relative;
@@ -50,14 +50,15 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.2);
       width: 100%;
       max-width: 500px;
-      padding: 5px 45px 8px 45px; /* Side padding prevents overlap with hidden buttons */
+      padding: 4px 45px 6px 45px;
       position: relative;
       box-sizing: border-box;
+      flex-shrink: 0;
     }
 
     h1 {
       margin: 0;
-      font-size: clamp(1.3rem, 4.5vw, 1.8rem);
+      font-size: clamp(1.2rem, 4vw, 1.7rem);
       letter-spacing: 2px;
       font-weight: 700;
       text-transform: uppercase;
@@ -69,8 +70,8 @@
     }
 
     h2 {
-      margin: 4px 0 0;
-      font-size: clamp(0.7rem, 2.5vw, 0.85rem);
+      margin: 3px 0 0;
+      font-size: clamp(0.7rem, 2.3vw, 0.85rem);
       color: #dddddd;
       font-weight: 600;
       letter-spacing: 1px;
@@ -98,13 +99,13 @@
     /* Toast Notification */
     #toast {
       position: fixed;
-      top: 75px;
+      top: 70px;
       background-color: #ffffff;
       color: #000000;
-      padding: 10px 18px;
+      padding: 8px 16px;
       border-radius: 5px;
       font-weight: bold;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       z-index: 200;
       display: none;
       box-shadow: 0 4px 15px rgba(0,0,0,0.5);
@@ -118,33 +119,33 @@
       align-items: center;
       flex-grow: 1;
       width: 100%;
-      max-height: 60vh;
+      max-height: 58vh;
     }
 
     #game-board {
       display: grid;
       grid-template-rows: repeat(6, 1fr);
-      grid-gap: 5px;
-      padding: 5px;
+      grid-gap: 4px;
+      padding: 4px;
       width: 100%;
-      max-width: 350px;
+      max-width: 340px;
       height: 100%;
-      max-height: 420px;
+      max-height: 390px;
     }
 
-    .row { display: grid; grid-gap: 5px; }
+    .row { display: grid; grid-gap: 4px; }
 
     .tile {
       width: 100%;
       height: 100%;
-      max-width: 62px;
-      max-height: 62px;
+      max-width: 58px;
+      max-height: 58px;
       margin: 0 auto;
       border: 2px solid var(--color-border);
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: clamp(1.4rem, 5vw, 2rem);
+      font-size: clamp(1.3rem, 4.5vw, 1.8rem);
       font-weight: bold;
       text-transform: uppercase;
       user-select: none;
@@ -184,13 +185,15 @@
     .tile[data-state="present"] { background-color: var(--color-present) !important; border-color: var(--color-present) !important; }
     .tile[data-state="absent"] { background-color: var(--color-absent) !important; border-color: var(--color-absent) !important; }
 
-    /* Keyboard */
+    /* Keyboard Layout Fixes */
     #keyboard {
       display: flex;
       flex-direction: column;
       gap: 5px;
       width: 100%;
       max-width: 500px;
+      flex-shrink: 0;
+      margin-bottom: 2px;
     }
 
     .k-row {
@@ -205,10 +208,10 @@
       color: white;
       border: 0;
       border-radius: 4px;
-      height: clamp(48px, 7vh, 58px);
+      height: clamp(42px, 6vh, 52px); /* Tighter height range prevents overflow */
       flex: 1;
       font-weight: bold;
-      font-size: clamp(0.9rem, 3vw, 1.1rem);
+      font-size: clamp(0.85rem, 2.8vw, 1rem);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -275,6 +278,62 @@
       background: #2a2a2a; color: white; font-size: 0.95rem; box-sizing: border-box;
     }
 
+    /* Dual Mode Source Toggles */
+    .source-toggle {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      padding: 6px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #aaa;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .toggle-btn.active {
+      background: var(--color-correct);
+      color: #fff;
+      border-color: var(--color-correct);
+    }
+
+    .file-picker-wrapper {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .file-picker-btn {
+      background: #333;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 5px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border: 1px solid #555;
+      font-weight: bold;
+    }
+
+    .file-picker-btn:active { background: #555; }
+
+    .btn-clear-photo {
+      background: #d32f2f;
+      color: white;
+      border: none;
+      padding: 8px 10px;
+      border-radius: 5px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
     .color-picker-wrapper {
       display: flex;
       align-items: center;
@@ -311,8 +370,8 @@
   <header>
     <div id="hidden-admin-trigger" onclick="openAdmin()"></div>
     <div id="hidden-reset-trigger" onclick="resetGame()"></div>
-    <h1 id="title">WORD PLAY</h1>
-    <h2 id="subtitle">KOJI VS. GUEST</h2>
+    <h1 id="title">KOJI'S WORD PLAY</h1>
+    <h2 id="subtitle">GUEST CHALLENGE</h2>
   </header>
 
   <div id="board-container">
@@ -381,10 +440,28 @@
         <label>Target Word (4, 5, or 6 Letters)</label>
         <input type="text" id="admin-word" placeholder="e.g. ALBUM" maxlength="6">
       </div>
+      
       <div class="form-group">
-        <label>Background Image URL (Optional)</label>
-        <input type="text" id="admin-bg" placeholder="https://example.com/album-art.jpg">
+        <label>Background Image Source</label>
+        <div class="source-toggle">
+          <div id="toggle-file-btn" class="toggle-btn active" onclick="setBgSourceMode('file')">Photo Library</div>
+          <div id="toggle-url-btn" class="toggle-btn" onclick="setBgSourceMode('url')">Image URL</div>
+        </div>
+
+        <!-- Mode A: Local File Upload -->
+        <div id="bg-file-container" class="file-picker-wrapper">
+          <label for="admin-bg-file" class="file-picker-btn">Choose Photo...</label>
+          <input type="file" id="admin-bg-file" accept="image/*" style="display:none;" onchange="handleFileSelect(event)">
+          <span id="bg-file-name" style="font-size: 0.8rem; color: #aaa; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">No photo loaded</span>
+          <button class="btn-clear-photo" onclick="clearPhoto()">Clear</button>
+        </div>
+
+        <!-- Mode B: URL Input -->
+        <div id="bg-url-container" style="display: none;">
+          <input type="text" id="admin-bg-url" placeholder="https://example.com/album-art.jpg">
+        </div>
       </div>
+
       <div class="form-group">
         <label>Artist Brand Color</label>
         <div class="color-picker-wrapper">
@@ -407,6 +484,7 @@
     let guestName = urlParams.get('guest') || 'Special Guest';
     let brandColor = urlParams.get('color') ? `#${urlParams.get('color')}` : '#6aaa64';
     let bgImage = urlParams.get('bg') || '';
+    let bgSourceMode = 'file';
 
     let wordLength = targetWord.length;
     const maxAttempts = 6;
@@ -431,6 +509,45 @@
       } else {
         bgLayer.style.backgroundImage = 'none';
       }
+    }
+
+    function setBgSourceMode(mode) {
+      bgSourceMode = mode;
+      const fileBtn = document.getElementById('toggle-file-btn');
+      const urlBtn = document.getElementById('toggle-url-btn');
+      const fileContainer = document.getElementById('bg-file-container');
+      const urlContainer = document.getElementById('bg-url-container');
+
+      if (mode === 'file') {
+        fileBtn.classList.add('active');
+        urlBtn.classList.remove('active');
+        fileContainer.style.display = 'flex';
+        urlContainer.style.display = 'none';
+      } else {
+        urlBtn.classList.add('active');
+        fileBtn.classList.remove('active');
+        urlContainer.style.display = 'block';
+        fileContainer.style.display = 'none';
+      }
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          bgImage = e.target.result;
+          document.getElementById('bg-file-name').innerText = file.name;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function clearPhoto() {
+      bgImage = '';
+      document.getElementById('admin-bg-file').value = '';
+      document.getElementById('admin-bg-url').value = '';
+      document.getElementById('bg-file-name').innerText = 'No photo loaded';
     }
 
     function initGame() {
@@ -607,7 +724,6 @@
     function openAdmin() {
       document.getElementById('admin-guest').value = guestName;
       document.getElementById('admin-word').value = targetWord;
-      document.getElementById('admin-bg').value = bgImage;
       document.getElementById('admin-color').value = brandColor;
       document.getElementById('admin-color-hex').innerText = brandColor.toUpperCase();
       document.getElementById('admin-modal').style.display = 'flex';
@@ -620,7 +736,6 @@
     function saveAdmin() {
       const g = document.getElementById('admin-guest').value.trim();
       const w = document.getElementById('admin-word').value.trim().toUpperCase();
-      const b = document.getElementById('admin-bg').value.trim();
       const c = document.getElementById('admin-color').value;
 
       if (w.length < 4 || w.length > 6) {
@@ -628,9 +743,13 @@
         return;
       }
 
+      if (bgSourceMode === 'url') {
+        const urlVal = document.getElementById('admin-bg-url').value.trim();
+        if (urlVal) bgImage = urlVal;
+      }
+
       guestName = g || 'Special Guest';
       targetWord = w;
-      bgImage = b;
       brandColor = c;
       closeAdmin();
       initGame();
