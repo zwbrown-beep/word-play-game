@@ -29,11 +29,24 @@
       padding: 10px 10px 20px 10px;
       touch-action: manipulation;
       overflow: hidden;
+      position: relative;
+    }
+
+    /* Dynamic Background Image Layer */
+    #bg-layer {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-size: cover;
+      background-position: center;
+      filter: blur(10px) brightness(0.35);
+      transform: scale(1.1); /* Prevents blurred edges */
+      z-index: -1;
+      transition: background-image 0.5s ease-in-out;
     }
 
     header {
       text-align: center;
-      border-bottom: 1px solid #3a3a3c;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
       width: 100%;
       max-width: 500px;
       padding-bottom: 8px;
@@ -48,38 +61,32 @@
       text-transform: uppercase;
       color: var(--brand-color);
       transition: color 0.3s ease;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
 
     h2 {
       margin: 2px 0 0;
       font-size: 0.85rem;
-      color: #818384;
+      color: #cccccc;
       font-weight: 600;
       letter-spacing: 1px;
       text-transform: uppercase;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
     }
 
     /* Secret Buttons */
     #hidden-admin-trigger {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 40px;
-      height: 40px;
-      opacity: 0;
-      cursor: pointer;
-      z-index: 10;
+      top: 0; left: 0;
+      width: 40px; height: 40px;
+      opacity: 0; cursor: pointer; z-index: 10;
     }
 
     #hidden-reset-trigger {
       position: absolute;
-      top: 0;
-      right: 0;
-      width: 40px;
-      height: 40px;
-      opacity: 0;
-      cursor: pointer;
-      z-index: 10;
+      top: 0; right: 0;
+      width: 40px; height: 40px;
+      opacity: 0; cursor: pointer; z-index: 10;
     }
 
     /* Toast Notification */
@@ -116,10 +123,7 @@
       max-width: 350px;
     }
 
-    .row {
-      display: grid;
-      grid-gap: 5px;
-    }
+    .row { display: grid; grid-gap: 5px; }
 
     .tile {
       width: 100%;
@@ -132,8 +136,9 @@
       font-weight: bold;
       text-transform: uppercase;
       user-select: none;
-      background-color: transparent;
+      background-color: rgba(18, 18, 19, 0.6); /* Semi-transparent for background visibility */
       color: white;
+      backdrop-filter: blur(5px);
     }
 
     .tile[data-state="active"] {
@@ -141,7 +146,6 @@
       animation: pop 0.1s ease-in-out;
     }
 
-    /* Animations */
     @keyframes pop {
       0% { transform: scale(1); }
       50% { transform: scale(1.1); }
@@ -185,7 +189,7 @@
     }
 
     .key {
-      background-color: #818384;
+      background-color: rgba(129, 131, 132, 0.85);
       color: white;
       border: 0;
       border-radius: 4px;
@@ -198,6 +202,7 @@
       align-items: center;
       cursor: pointer;
       user-select: none;
+      backdrop-filter: blur(5px);
       -webkit-tap-highlight-color: transparent;
     }
 
@@ -271,8 +276,7 @@
     .color-picker-wrapper input[type="color"] {
       -webkit-appearance: none;
       border: none;
-      width: 36px;
-      height: 36px;
+      width: 36px; height: 36px;
       border-radius: 50%;
       cursor: pointer;
       background: none;
@@ -289,6 +293,7 @@
 </head>
 <body>
 
+  <div id="bg-layer"></div>
   <div id="toast">Not in word list</div>
 
   <header>
@@ -365,6 +370,10 @@
         <input type="text" id="admin-word" placeholder="e.g. ALBUM" maxlength="6">
       </div>
       <div class="form-group">
+        <label>Background Image URL (Optional)</label>
+        <input type="text" id="admin-bg" placeholder="https://example.com/album-art.jpg">
+      </div>
+      <div class="form-group">
         <label>Artist Brand Color</label>
         <div class="color-picker-wrapper">
           <input type="color" id="admin-color" value="#6aaa64">
@@ -386,6 +395,7 @@
     let targetWord = (urlParams.get('word') || 'ALBUM').toUpperCase();
     let guestName = urlParams.get('guest') || 'Special Guest';
     let brandColor = urlParams.get('color') ? `#${urlParams.get('color')}` : '#6aaa64';
+    let bgImage = urlParams.get('bg') || '';
 
     let wordLength = targetWord.length;
     const maxAttempts = 6;
@@ -393,7 +403,6 @@
     let currentGuess = '';
     let isGameOver = false;
 
-    // Additional custom words list (ensures target words like band names or specific music terms always pass)
     const customValidWords = new Set([
       'ALBUM', 'VINYL', 'AUDIO', 'STAGE', 'TRACK', 'VOCAL', 'CHORD', 'GENRE', 'MUSIC',
       'SINGLE', 'ARTIST', 'GUITAR', 'RECORD', 'STUDIO', 'TOURING', 'KOJI', 'SONY'
@@ -404,20 +413,28 @@
       document.documentElement.style.setProperty('--color-correct', color);
     }
 
+    function applyBackgroundImage(url) {
+      const bgLayer = document.getElementById('bg-layer');
+      if (url) {
+        bgLayer.style.backgroundImage = `url('${url}')`;
+      } else {
+        bgLayer.style.backgroundImage = 'none';
+      }
+    }
+
     function initGame() {
       wordLength = targetWord.length;
       currentAttempt = 0;
       currentGuess = '';
       isGameOver = false;
 
-      // Always ensure the current target word is valid
       customValidWords.add(targetWord);
-
       applyBrandColor(brandColor);
+      applyBackgroundImage(bgImage);
+
       document.getElementById('subtitle').innerText = `KOJI VS. ${guestName}`;
       closeResult();
 
-      // Reset Board
       const board = document.getElementById('game-board');
       board.innerHTML = '';
 
@@ -435,7 +452,6 @@
         board.appendChild(row);
       }
 
-      // Reset Keys
       document.querySelectorAll('.key').forEach(k => k.removeAttribute('data-state'));
     }
 
@@ -448,20 +464,11 @@
 
     async function isValidWord(word) {
       if (customValidWords.has(word)) return true;
-
-      // Primary check: Free Dictionary API (runs when online)
       try {
         const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`);
         if (response.ok) return true;
-      } catch (e) {
-        // Fallback for offline usage
-      }
+      } catch (e) {}
 
-      // Offline Fallback Check via DOM Spellchecker
-      const checker = document.getElementById('dict-checker');
-      checker.value = word.toLowerCase();
-      
-      // Basic vowel heuristic fallback to prevent pure gibberish like "ZXCVB"
       const hasVowel = /[AEIOUY]/i.test(word);
       return hasVowel;
     }
@@ -509,7 +516,6 @@
       const targetArr = targetWord.split('');
       const tileStates = Array(wordLength).fill('absent');
 
-      // Exact matches (Brand Color / Green)
       guessArr.forEach((char, i) => {
         if (char === targetArr[i]) {
           tileStates[i] = 'correct';
@@ -517,7 +523,6 @@
         }
       });
 
-      // Partial matches (Yellow)
       guessArr.forEach((char, i) => {
         if (tileStates[i] !== 'correct' && targetArr.includes(char)) {
           tileStates[i] = 'present';
@@ -525,7 +530,6 @@
         }
       });
 
-      // Flip animation sequence
       guessArr.forEach((char, i) => {
         const tile = document.getElementById(`tile-${currentAttempt}-${i}`);
         const key = document.querySelector(`.key[data-key="${char}"]`);
@@ -562,7 +566,6 @@
       }, wordLength * 250 + 300);
     }
 
-    // Modal Control Functions
     function showResult(isWin) {
       const modal = document.getElementById('result-modal');
       const title = document.getElementById('result-title');
@@ -593,6 +596,7 @@
     function openAdmin() {
       document.getElementById('admin-guest').value = guestName;
       document.getElementById('admin-word').value = targetWord;
+      document.getElementById('admin-bg').value = bgImage;
       document.getElementById('admin-color').value = brandColor;
       document.getElementById('admin-color-hex').innerText = brandColor.toUpperCase();
       document.getElementById('admin-modal').style.display = 'flex';
@@ -605,6 +609,7 @@
     function saveAdmin() {
       const g = document.getElementById('admin-guest').value.trim();
       const w = document.getElementById('admin-word').value.trim().toUpperCase();
+      const b = document.getElementById('admin-bg').value.trim();
       const c = document.getElementById('admin-color').value;
 
       if (w.length < 4 || w.length > 6) {
@@ -614,17 +619,16 @@
 
       guestName = g || 'Special Guest';
       targetWord = w;
+      bgImage = b;
       brandColor = c;
       closeAdmin();
       initGame();
     }
 
-    // Color Picker UI Updates
     document.getElementById('admin-color').addEventListener('input', (e) => {
       document.getElementById('admin-color-hex').innerText = e.target.value.toUpperCase();
     });
 
-    // Keyboard Listeners
     document.querySelectorAll('.key').forEach(k => {
       k.addEventListener('click', (e) => {
         handleKey(e.currentTarget.getAttribute('data-key'));
