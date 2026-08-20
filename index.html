@@ -189,8 +189,8 @@
     .key[data-state="present"] { background-color: var(--color-present); }
     .key[data-state="absent"] { background-color: var(--color-absent); }
 
-    /* Admin Panel Modal */
-    #admin-modal {
+    /* Modals */
+    .modal-overlay {
       display: none;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -198,20 +198,42 @@
       z-index: 100;
       justify-content: center;
       align-items: center;
+      animation: fadeIn 0.3s ease-in-out;
     }
 
-    .admin-content {
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-content {
       background: #1e1e1e;
-      padding: 25px;
-      border-radius: 10px;
+      padding: 30px 25px;
+      border-radius: 12px;
       width: 90%;
-      max-width: 400px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.8);
+      max-width: 380px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.9);
       border: 1px solid #333;
+      text-align: center;
     }
 
-    .admin-content h3 { margin-top: 0; color: #fff; text-align: center; }
-    .form-group { margin-bottom: 15px; }
+    .modal-content h3 { margin-top: 0; font-size: 1.8rem; letter-spacing: 1px; }
+    .modal-content p { color: #ccc; font-size: 1rem; margin: 10px 0 20px 0; }
+
+    .result-word {
+      font-size: 2rem;
+      font-weight: bold;
+      letter-spacing: 4px;
+      color: var(--color-correct);
+      background: #2a2a2a;
+      padding: 10px;
+      border-radius: 8px;
+      margin: 15px 0;
+      display: inline-block;
+      width: 100%;
+    }
+
+    .form-group { margin-bottom: 15px; text-align: left; }
     .form-group label { display: block; margin-bottom: 5px; font-size: 0.85rem; color: #aaa; }
     .form-group input {
       width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #444;
@@ -219,7 +241,7 @@
     }
 
     .btn-group { display: flex; gap: 10px; margin-top: 20px; }
-    .btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+    .btn { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.95rem; }
     .btn-save { background: var(--color-correct); color: white; }
     .btn-cancel { background: #444; color: white; }
   </style>
@@ -274,9 +296,22 @@
     </div>
   </div>
 
-  <!-- Admin Modal -->
-  <div id="admin-modal">
-    <div class="admin-content">
+  <!-- End Game Result Modal -->
+  <div id="result-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 id="result-title">VICTORY!</h3>
+      <p id="result-message">You solved the word in 3 tries!</p>
+      <div id="result-word-display" class="result-word">ALBUM</div>
+      <div class="btn-group">
+        <button class="btn btn-cancel" onclick="resetGame()">Play Again</button>
+        <button class="btn btn-save" onclick="openAdmin(); closeResult();">Next Guest</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Panel Modal -->
+  <div id="admin-modal" class="modal-overlay">
+    <div class="modal-content">
       <h3>Producer Panel</h3>
       <div class="form-group">
         <label>Guest / Band Name</label>
@@ -311,6 +346,7 @@
       isGameOver = false;
 
       document.getElementById('subtitle').innerText = `KOJI VS. ${guestName}`;
+      closeResult();
 
       // Reset Board
       const board = document.getElementById('game-board');
@@ -395,7 +431,6 @@
           tile.classList.add('flip');
           tile.setAttribute('data-state', tileStates[i]);
 
-          // Update On-Screen Keyboard
           if (key) {
             const currentState = key.getAttribute('data-state');
             if (tileStates[i] === 'correct') {
@@ -412,17 +447,44 @@
       setTimeout(() => {
         if (currentGuess === targetWord) {
           isGameOver = true;
+          showResult(true);
         } else {
           currentAttempt++;
           currentGuess = '';
           if (currentAttempt === maxAttempts) {
             isGameOver = true;
+            showResult(false);
           }
         }
-      }, wordLength * 250);
+      }, wordLength * 250 + 300);
     }
 
-    // Hidden Controls
+    // Modal Control Functions
+    function showResult(isWin) {
+      const modal = document.getElementById('result-modal');
+      const title = document.getElementById('result-title');
+      const msg = document.getElementById('result-message');
+      const wordDisplay = document.getElementById('result-word-display');
+
+      wordDisplay.innerText = targetWord;
+
+      if (isWin) {
+        title.innerText = "CHALLENGE PASSED!";
+        title.style.color = "var(--color-correct)";
+        msg.innerText = `${guestName} guessed it in ${currentAttempt + 1}/${maxAttempts} attempts!`;
+      } else {
+        title.innerText = "GAME OVER!";
+        title.style.color = "#e53935";
+        msg.innerText = `${guestName} ran out of guesses!`;
+      }
+
+      modal.style.display = 'flex';
+    }
+
+    function closeResult() {
+      document.getElementById('result-modal').style.display = 'none';
+    }
+
     function resetGame() { initGame(); }
 
     function openAdmin() {
@@ -450,7 +512,7 @@
       initGame();
     }
 
-    // Keyboards Listeners
+    // Keyboard Listeners
     document.querySelectorAll('.key').forEach(k => {
       k.addEventListener('click', (e) => {
         handleKey(e.currentTarget.getAttribute('data-key'));
