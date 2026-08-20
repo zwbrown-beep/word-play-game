@@ -3,59 +3,111 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Word Play - Custom Challenge</title>
+  <title>Word Play - Sony Music</title>
   <style>
     :root {
-      --brand-color: #121213;
-      --correct: #538d4e;
-      --present: #b59f3b;
-      --absent: #3a3a3c;
-      --tile-border: #3a3a3c;
+      --brand-color: #ffffff;
+      --color-correct: #6aaa64;
+      --color-present: #c9b458;
+      --color-absent: #3a3a3c;
+      --color-border: #3a3a3c;
+      --color-tile-active: #565758;
+      --color-bg: #121213;
     }
+
+    * { box-sizing: border-box; font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif; }
+
     body {
-      background-color: #121213;
+      background-color: var(--color-bg);
       color: #ffffff;
-      font-family: 'Helvetica Neue', Arial, sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: space-between;
       height: 100vh;
       margin: 0;
-      padding: 20px 10px;
-      box-sizing: border-box;
+      padding: 10px 10px 20px 10px;
       touch-action: manipulation;
+      overflow: hidden;
     }
+
     header {
       text-align: center;
+      border-bottom: 1px solid #3a3a3c;
+      width: 100%;
+      max-width: 500px;
+      padding-bottom: 8px;
+      position: relative;
     }
+
     h1 {
       margin: 0;
       font-size: 1.8rem;
-      letter-spacing: 2px;
+      letter-spacing: 3px;
+      font-weight: 700;
+      text-transform: uppercase;
       color: var(--brand-color);
     }
+
     h2 {
-      margin: 5px 0 0;
-      font-size: 1.1rem;
+      margin: 2px 0 0;
+      font-size: 0.85rem;
       color: #818384;
-      font-weight: 400;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
     }
+
+    /* Secret Buttons */
+    #hidden-admin-trigger {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 40px;
+      height: 40px;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    #hidden-reset-trigger {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 40px;
+      height: 40px;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    /* Game Board */
+    #board-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-grow: 1;
+      width: 100%;
+    }
+
     #game-board {
       display: grid;
       grid-template-rows: repeat(6, 1fr);
       grid-gap: 5px;
+      padding: 10px;
       width: 100%;
       max-width: 350px;
-      aspect-ratio: 5 / 6;
     }
+
     .row {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
       grid-gap: 5px;
     }
+
     .tile {
-      border: 2px solid var(--tile-border);
+      width: 100%;
+      aspect-ratio: 1;
+      border: 2px solid var(--color-border);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -63,11 +115,43 @@
       font-weight: bold;
       text-transform: uppercase;
       user-select: none;
+      background-color: transparent;
+      color: white;
     }
-    .tile[data-state="correct"] { background-color: var(--correct); border-color: var(--correct); }
-    .tile[data-state="present"] { background-color: var(--present); border-color: var(--present); }
-    .tile[data-state="absent"] { background-color: var(--absent); border-color: var(--absent); }
-    
+
+    .tile[data-state="active"] {
+      border-color: var(--color-tile-active);
+      animation: pop 0.1s ease-in-out;
+    }
+
+    /* Animations */
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    .shake { animation: shake 0.5s; }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-5px); }
+      40%, 80% { transform: translateX(5px); }
+    }
+
+    .flip { animation: flip 0.5s forwards; }
+
+    @keyframes flip {
+      0% { transform: rotateX(0deg); }
+      50% { transform: rotateX(90deg); }
+      100% { transform: rotateX(0deg); }
+    }
+
+    .tile[data-state="correct"] { background-color: var(--color-correct) !important; border-color: var(--color-correct) !important; }
+    .tile[data-state="present"] { background-color: var(--color-present) !important; border-color: var(--color-present) !important; }
+    .tile[data-state="absent"] { background-color: var(--color-absent) !important; border-color: var(--color-absent) !important; }
+
+    /* Keyboard */
     #keyboard {
       display: flex;
       flex-direction: column;
@@ -75,160 +159,313 @@
       width: 100%;
       max-width: 500px;
     }
+
     .k-row {
       display: flex;
       justify-content: center;
-      gap: 4px;
+      gap: 5px;
+      touch-action: manipulation;
     }
+
     .key {
       background-color: #818384;
       color: white;
       border: 0;
       border-radius: 4px;
-      height: 55px;
+      height: 58px;
       flex: 1;
       font-weight: bold;
+      font-size: 1.1rem;
       display: flex;
       justify-content: center;
       align-items: center;
       cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
-    .key.wide { flex: 1.5; font-size: 0.8rem; }
+
+    .key.wide { flex: 1.5; font-size: 0.75rem; }
+    .key[data-state="correct"] { background-color: var(--color-correct); }
+    .key[data-state="present"] { background-color: var(--color-present); }
+    .key[data-state="absent"] { background-color: var(--color-absent); }
+
+    /* Admin Panel Modal */
+    #admin-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .admin-content {
+      background: #1e1e1e;
+      padding: 25px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.8);
+      border: 1px solid #333;
+    }
+
+    .admin-content h3 { margin-top: 0; color: #fff; text-align: center; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-size: 0.85rem; color: #aaa; }
+    .form-group input {
+      width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #444;
+      background: #2a2a2a; color: white; font-size: 1rem; box-sizing: border-box;
+    }
+
+    .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+    .btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+    .btn-save { background: var(--color-correct); color: white; }
+    .btn-cancel { background: #444; color: white; }
   </style>
 </head>
 <body>
 
   <header>
+    <div id="hidden-admin-trigger" onclick="openAdmin()"></div>
+    <div id="hidden-reset-trigger" onclick="resetGame()"></div>
     <h1 id="title">WORD PLAY</h1>
-    <h2 id="subtitle">Koji vs. Guest</h2>
+    <h2 id="subtitle">KOJI VS. GUEST</h2>
   </header>
 
-  <div id="game-board"></div>
+  <div id="board-container">
+    <div id="game-board"></div>
+  </div>
 
   <div id="keyboard">
     <div class="k-row">
-      <button class="key" onclick="handleKey('Q')">Q</button>
-      <button class="key" onclick="handleKey('W')">W</button>
-      <button class="key" onclick="handleKey('E')">E</button>
-      <button class="key" onclick="handleKey('R')">R</button>
-      <button class="key" onclick="handleKey('T')">T</button>
-      <button class="key" onclick="handleKey('Y')">Y</button>
-      <button class="key" onclick="handleKey('U')">U</button>
-      <button class="key" onclick="handleKey('I')">I</button>
-      <button class="key" onclick="handleKey('O')">O</button>
-      <button class="key" onclick="handleKey('P')">P</button>
+      <button class="key" data-key="Q">Q</button>
+      <button class="key" data-key="W">W</button>
+      <button class="key" data-key="E">E</button>
+      <button class="key" data-key="R">R</button>
+      <button class="key" data-key="T">T</button>
+      <button class="key" data-key="Y">Y</button>
+      <button class="key" data-key="U">U</button>
+      <button class="key" data-key="I">I</button>
+      <button class="key" data-key="O">O</button>
+      <button class="key" data-key="P">P</button>
     </div>
     <div class="k-row">
-      <button class="key" onclick="handleKey('A')">A</button>
-      <button class="key" onclick="handleKey('S')">S</button>
-      <button class="key" onclick="handleKey('D')">D</button>
-      <button class="key" onclick="handleKey('F')">F</button>
-      <button class="key" onclick="handleKey('G')">G</button>
-      <button class="key" onclick="handleKey('H')">H</button>
-      <button class="key" onclick="handleKey('J')">J</button>
-      <button class="key" onclick="handleKey('K')">K</button>
-      <button class="key" onclick="handleKey('L')">L</button>
+      <button class="key" data-key="A">A</button>
+      <button class="key" data-key="S">S</button>
+      <button class="key" data-key="D">D</button>
+      <button class="key" data-key="F">F</button>
+      <button class="key" data-key="G">G</button>
+      <button class="key" data-key="H">H</button>
+      <button class="key" data-key="J">J</button>
+      <button class="key" data-key="K">K</button>
+      <button class="key" data-key="L">L</button>
     </div>
     <div class="k-row">
-      <button class="key wide" onclick="handleKey('ENTER')">ENTER</button>
-      <button class="key" onclick="handleKey('Z')">Z</button>
-      <button class="key" onclick="handleKey('X')">X</button>
-      <button class="key" onclick="handleKey('C')">C</button>
-      <button class="key" onclick="handleKey('V')">V</button>
-      <button class="key" onclick="handleKey('B')">B</button>
-      <button class="key" onclick="handleKey('N')">N</button>
-      <button class="key" onclick="handleKey('M')">M</button>
-      <button class="key wide" onclick="handleKey('BACK')">DEL</button>
+      <button class="key wide" data-key="ENTER">ENTER</button>
+      <button class="key" data-key="Z">Z</button>
+      <button class="key" data-key="X">X</button>
+      <button class="key" data-key="C">C</button>
+      <button class="key" data-key="V">V</button>
+      <button class="key" data-key="B">B</button>
+      <button class="key" data-key="N">N</button>
+      <button class="key" data-key="M">M</button>
+      <button class="key wide" data-key="BACK">DEL</button>
+    </div>
+  </div>
+
+  <!-- Admin Modal -->
+  <div id="admin-modal">
+    <div class="admin-content">
+      <h3>Producer Panel</h3>
+      <div class="form-group">
+        <label>Guest / Band Name</label>
+        <input type="text" id="admin-guest" placeholder="e.g. Bring Me The Horizon">
+      </div>
+      <div class="form-group">
+        <label>Target Word (4, 5, or 6 Letters)</label>
+        <input type="text" id="admin-word" placeholder="e.g. ALBUM" maxlength="6">
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-cancel" onclick="closeAdmin()">Cancel</button>
+        <button class="btn btn-save" onclick="saveAdmin()">Save & Launch</button>
+      </div>
     </div>
   </div>
 
   <script>
-    // URL parameter support (e.g., index.html?word=MUSIC&guest=SonyArtist)
     const urlParams = new URLSearchParams(window.location.search);
-    let targetWord = (urlParams.get('word') || 'KOJI').toUpperCase();
+    let targetWord = (urlParams.get('word') || 'ALBUM').toUpperCase();
     let guestName = urlParams.get('guest') || 'Special Guest';
-    let brandColor = urlParams.get('color') ? `#${urlParams.get('color')}` : '#e10600';
 
-    document.getElementById('subtitle').innerText = `Special Challenge for ${guestName}`;
-    document.documentElement.style.setProperty('--brand-color', brandColor);
-
-    const wordLength = targetWord.length;
+    let wordLength = targetWord.length;
     const maxAttempts = 6;
     let currentAttempt = 0;
     let currentGuess = '';
+    let isGameOver = false;
 
-    const board = document.getElementById('game-board');
+    function initGame() {
+      wordLength = targetWord.length;
+      currentAttempt = 0;
+      currentGuess = '';
+      isGameOver = false;
 
-    // Build Dynamic Board
-    for (let i = 0; i < maxAttempts; i++) {
-      const row = document.createElement('div');
-      row.className = 'row';
-      row.style.gridTemplateColumns = `repeat(${wordLength}, 1fr)`;
-      for (let j = 0; j < wordLength; j++) {
-        const tile = document.createElement('div');
-        tile.className = 'tile';
-        tile.id = `tile-${i}-${j}`;
-        row.appendChild(tile);
+      document.getElementById('subtitle').innerText = `KOJI VS. ${guestName}`;
+
+      // Reset Board
+      const board = document.getElementById('game-board');
+      board.innerHTML = '';
+
+      for (let i = 0; i < maxAttempts; i++) {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.id = `row-${i}`;
+        row.style.gridTemplateColumns = `repeat(${wordLength}, 1fr)`;
+        for (let j = 0; j < wordLength; j++) {
+          const tile = document.createElement('div');
+          tile.className = 'tile';
+          tile.id = `tile-${i}-${j}`;
+          row.appendChild(tile);
+        }
+        board.appendChild(row);
       }
-      board.appendChild(row);
+
+      // Reset Keys
+      document.querySelectorAll('.key').forEach(k => k.removeAttribute('data-state'));
     }
 
-    function handleKey(letter) {
-      if (currentAttempt >= maxAttempts) return;
+    function handleKey(key) {
+      if (isGameOver) return;
 
-      if (letter === 'BACK') {
-        currentGuess = currentGuess.slice(0, -1);
-      } else if (letter === 'ENTER') {
+      if (key === 'BACK' || key === 'BACKSPACE') {
+        if (currentGuess.length > 0) {
+          currentGuess = currentGuess.slice(0, -1);
+          const tile = document.getElementById(`tile-${currentAttempt}-${currentGuess.length}`);
+          tile.innerText = '';
+          tile.removeAttribute('data-state');
+        }
+      } else if (key === 'ENTER') {
         if (currentGuess.length === wordLength) {
           checkGuess();
+        } else {
+          shakeRow();
         }
-      } else if (currentGuess.length < wordLength && /^[A-Z]$/.i.test(letter)) {
-        currentGuess += letter;
+      } else if (currentGuess.length < wordLength && /^[A-Z]$/.test(key)) {
+        const tile = document.getElementById(`tile-${currentAttempt}-${currentGuess.length}`);
+        tile.innerText = key;
+        tile.setAttribute('data-state', 'active');
+        currentGuess += key;
       }
-      updateBoard();
     }
 
-    function updateBoard() {
-      for (let j = 0; j < wordLength; j++) {
-        const tile = document.getElementById(`tile-${currentAttempt}-${j}`);
-        tile.innerText = currentGuess[j] || '';
-      }
+    function shakeRow() {
+      const row = document.getElementById(`row-${currentAttempt}`);
+      row.classList.add('shake');
+      setTimeout(() => row.classList.remove('shake'), 500);
     }
 
     function checkGuess() {
-      const guessArray = currentGuess.split('');
-      const targetArray = targetWord.split('');
+      const row = document.getElementById(`row-${currentAttempt}`);
+      const guessArr = currentGuess.split('');
+      const targetArr = targetWord.split('');
+      const tileStates = Array(wordLength).fill('absent');
 
-      guessArray.forEach((char, index) => {
-        const tile = document.getElementById(`tile-${currentAttempt}-${index}`);
-        if (char === targetArray[index]) {
-          tile.setAttribute('data-state', 'correct');
-        } else if (targetArray.includes(char)) {
-          tile.setAttribute('data-state', 'present');
-        } else {
-          tile.setAttribute('data-state', 'absent');
+      // Exact matches (Green)
+      guessArr.forEach((char, i) => {
+        if (char === targetArr[i]) {
+          tileStates[i] = 'correct';
+          targetArr[i] = null;
         }
       });
 
-      if (currentGuess === targetWord) {
-        setTimeout(() => alert('Challenge Complete!'), 300);
-        currentAttempt = maxAttempts;
-      } else {
-        currentAttempt++;
-        currentGuess = '';
-        if (currentAttempt === maxAttempts) {
-          setTimeout(() => alert(`Game Over! The word was: ${targetWord}`), 300);
+      // Partial matches (Yellow)
+      guessArr.forEach((char, i) => {
+        if (tileStates[i] !== 'correct' && targetArr.includes(char)) {
+          tileStates[i] = 'present';
+          targetArr[targetArr.indexOf(char)] = null;
         }
-      }
+      });
+
+      // Flip animation sequence
+      guessArr.forEach((char, i) => {
+        const tile = document.getElementById(`tile-${currentAttempt}-${i}`);
+        const key = document.querySelector(`.key[data-key="${char}"]`);
+
+        setTimeout(() => {
+          tile.classList.add('flip');
+          tile.setAttribute('data-state', tileStates[i]);
+
+          // Update On-Screen Keyboard
+          if (key) {
+            const currentState = key.getAttribute('data-state');
+            if (tileStates[i] === 'correct') {
+              key.setAttribute('data-state', 'correct');
+            } else if (tileStates[i] === 'present' && currentState !== 'correct') {
+              key.setAttribute('data-state', 'present');
+            } else if (tileStates[i] === 'absent' && !currentState) {
+              key.setAttribute('data-state', 'absent');
+            }
+          }
+        }, i * 250);
+      });
+
+      setTimeout(() => {
+        if (currentGuess === targetWord) {
+          isGameOver = true;
+        } else {
+          currentAttempt++;
+          currentGuess = '';
+          if (currentAttempt === maxAttempts) {
+            isGameOver = true;
+          }
+        }
+      }, wordLength * 250);
     }
 
-    // Onscreen/Physical Keyboard listener
-    document.addEventListener('keydown', (e) => {
-      const key = e.key.toUpperCase();
-      if (key === 'BACKSPACE') handleKey('BACK');
-      else if (key === 'ENTER') handleKey('ENTER');
-      else if (/^[A-Z]$/.test(key)) handleKey(key);
+    // Hidden Controls
+    function resetGame() { initGame(); }
+
+    function openAdmin() {
+      document.getElementById('admin-guest').value = guestName;
+      document.getElementById('admin-word').value = targetWord;
+      document.getElementById('admin-modal').style.display = 'flex';
+    }
+
+    function closeAdmin() {
+      document.getElementById('admin-modal').style.display = 'none';
+    }
+
+    function saveAdmin() {
+      const g = document.getElementById('admin-guest').value.trim();
+      const w = document.getElementById('admin-word').value.trim().toUpperCase();
+
+      if (w.length < 4 || w.length > 6) {
+        alert('Please enter a 4, 5, or 6 letter word.');
+        return;
+      }
+
+      guestName = g || 'Special Guest';
+      targetWord = w;
+      closeAdmin();
+      initGame();
+    }
+
+    // Keyboards Listeners
+    document.querySelectorAll('.key').forEach(k => {
+      k.addEventListener('click', (e) => {
+        handleKey(e.currentTarget.getAttribute('data-key'));
+      });
     });
+
+    document.addEventListener('keydown', (e) => {
+      if (document.getElementById('admin-modal').style.display === 'flex') return;
+      const key = e.key.toUpperCase();
+      if (key === 'BACKSPACE' || key === 'ENTER' || /^[A-Z]$/.test(key)) {
+        handleKey(key);
+      }
+    });
+
+    initGame();
   </script>
 </body>
 </html>
