@@ -464,8 +464,6 @@
     </div>
   </div>
 
-  <textarea id="dict-checker" spellcheck="true" style="position:absolute; top:-9999px; left:-9999px;"></textarea>
-
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     
@@ -492,9 +490,20 @@
     let currentGuess = '';
     let isGameOver = false;
 
+    // Strict built-in word list to prevent gibberish entries
     const customValidWords = new Set([
       'ALBUM', 'VINYL', 'AUDIO', 'STAGE', 'TRACK', 'VOCAL', 'CHORD', 'GENRE', 'MUSIC',
-      'SINGLE', 'ARTIST', 'GUITAR', 'RECORD', 'STUDIO', 'TOURING', 'KOJI', 'SONY', 'VARLEY'
+      'SINGLE', 'ARTIST', 'GUITAR', 'RECORD', 'STUDIO', 'TOURING', 'KOJI', 'SONY', 'VARLEY',
+      'PIRATE', 'ROYAL', 'DEALS', 'AGENT', 'TALENT', 'ROSTER', 'CLIENT', 'MEDIA', 'FOCUS',
+      'APPLE', 'BEACH', 'BREAD', 'CHAIR', 'DANCE', 'DREAM', 'EARTH', 'FRUIT', 'GLASS',
+      'HEART', 'HOUSE', 'LIGHT', 'MONEY', 'NIGHT', 'PAPER', 'PARTY', 'PHONE', 'POWER',
+      'RADIO', 'RIVER', 'SOUND', 'SPACE', 'TABLE', 'WATER', 'WORLD', 'YOUTH', 'ACTION',
+      'BEAUTY', 'CAMERA', 'CENTER', 'CHANCE', 'CHANGE', 'DESIGN', 'DIRECT', 'ENERGY',
+      'FAMILY', 'FUTURE', 'GLOBAL', 'HEALTH', 'IMPACT', 'LEADER', 'MARKET', 'MOTION',
+      'PLAYER', 'RATING', 'RECORD', 'SEASON', 'SERIES', 'SIGNAL', 'SILENT', 'SIMPL',
+      'STATION', 'STREAM', 'STREET', 'SUMMER', 'SYSTEM', 'TICKET', 'TRAVEL', 'VOLUME',
+      'WINTER', 'WONDER', 'WRITER', 'YELLOW', 'BAND', 'BEAT', 'BASS', 'DRUM', 'SONG',
+      'TOUR', 'CLUB', 'DISC', 'SHOW', 'LIVE', 'STAR', 'ROCK', 'JAZZ', 'POP', 'SOUL'
     ]);
 
     function applyBrandColor(color) {
@@ -509,7 +518,6 @@
         return;
       }
 
-      // Automatically fix relative file paths (e.g. logo.png) on GitHub Pages
       if (!url.startsWith('http') && !url.startsWith('data:')) {
         const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
         url = baseUrl + url;
@@ -598,14 +606,17 @@
     }
 
     async function isValidWord(word) {
+      // 1. Check custom built-in word list (including target word)
       if (customValidWords.has(word)) return true;
+
+      // 2. Online Dictionary API Check
       try {
         const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`);
         if (response.ok) return true;
       } catch (e) {}
 
-      const hasVowel = /[AEIOUY]/i.test(word);
-      return hasVowel;
+      // Reject non-words
+      return false;
     }
 
     async function handleKey(key) {
