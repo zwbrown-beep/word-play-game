@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Koji's Word Play</title>
+  <title>Koji's Word Play - Sony Music</title>
   <style>
     :root {
       --brand-color: #6aaa64;
@@ -26,13 +26,12 @@
       justify-content: space-between;
       height: 100vh;
       margin: 0;
-      padding: 5px 10px 10px 10px; /* Reduced bottom padding to protect keyboard fit */
+      padding: 5px 10px 10px 10px;
       touch-action: manipulation;
       overflow: hidden;
       position: relative;
     }
 
-    /* Softened Background Blur */
     #bg-layer {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -44,7 +43,6 @@
       transition: background-image 0.5s ease-in-out;
     }
 
-    /* Responsive Header Layout */
     header {
       text-align: center;
       border-bottom: 1px solid rgba(255, 255, 255, 0.2);
@@ -81,7 +79,6 @@
       word-break: break-word;
     }
 
-    /* Secret Hot-Zones */
     #hidden-admin-trigger {
       position: absolute;
       top: 0; left: 0;
@@ -96,7 +93,6 @@
       opacity: 0; cursor: pointer; z-index: 10;
     }
 
-    /* Toast Notification */
     #toast {
       position: fixed;
       top: 70px;
@@ -112,7 +108,6 @@
       animation: fadeIn 0.2s ease-in-out;
     }
 
-    /* Game Board Container */
     #board-container {
       display: flex;
       justify-content: center;
@@ -185,7 +180,6 @@
     .tile[data-state="present"] { background-color: var(--color-present) !important; border-color: var(--color-present) !important; }
     .tile[data-state="absent"] { background-color: var(--color-absent) !important; border-color: var(--color-absent) !important; }
 
-    /* Keyboard Layout Fixes */
     #keyboard {
       display: flex;
       flex-direction: column;
@@ -208,7 +202,7 @@
       color: white;
       border: 0;
       border-radius: 4px;
-      height: clamp(42px, 6vh, 52px); /* Tighter height range prevents overflow */
+      height: clamp(42px, 6vh, 52px);
       flex: 1;
       font-weight: bold;
       font-size: clamp(0.85rem, 2.8vw, 1rem);
@@ -226,7 +220,6 @@
     .key[data-state="present"] { background-color: var(--color-present); }
     .key[data-state="absent"] { background-color: var(--color-absent); }
 
-    /* Modals */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -278,7 +271,6 @@
       background: #2a2a2a; color: white; font-size: 0.95rem; box-sizing: border-box;
     }
 
-    /* Dual Mode Source Toggles */
     .source-toggle {
       display: flex;
       gap: 10px;
@@ -415,7 +407,6 @@
     </div>
   </div>
 
-  <!-- End Game Result Modal -->
   <div id="result-modal" class="modal-overlay">
     <div class="modal-content">
       <h3 id="result-title">VICTORY!</h3>
@@ -428,7 +419,6 @@
     </div>
   </div>
 
-  <!-- Admin Panel Modal -->
   <div id="admin-modal" class="modal-overlay">
     <div class="modal-content">
       <h3>Producer Panel</h3>
@@ -448,7 +438,6 @@
           <div id="toggle-url-btn" class="toggle-btn" onclick="setBgSourceMode('url')">Image URL</div>
         </div>
 
-        <!-- Mode A: Local File Upload -->
         <div id="bg-file-container" class="file-picker-wrapper">
           <label for="admin-bg-file" class="file-picker-btn">Choose Photo...</label>
           <input type="file" id="admin-bg-file" accept="image/*" style="display:none;" onchange="handleFileSelect(event)">
@@ -456,7 +445,6 @@
           <button class="btn-clear-photo" onclick="clearPhoto()">Clear</button>
         </div>
 
-        <!-- Mode B: URL Input -->
         <div id="bg-url-container" style="display: none;">
           <input type="text" id="admin-bg-url" placeholder="https://example.com/album-art.jpg">
         </div>
@@ -480,7 +468,19 @@
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    let targetWord = (urlParams.get('word') || 'ALBUM').toUpperCase();
+    
+    let rawWordParam = urlParams.get('w');
+    let targetWord = 'ALBUM';
+    if (rawWordParam) {
+      try {
+        targetWord = atob(rawWordParam).toUpperCase();
+      } catch (e) {
+        targetWord = 'ALBUM';
+      }
+    } else if (urlParams.get('word')) {
+      targetWord = urlParams.get('word').toUpperCase();
+    }
+
     let guestName = urlParams.get('guest') || 'Special Guest';
     let brandColor = urlParams.get('color') ? `#${urlParams.get('color')}` : '#6aaa64';
     let bgImage = urlParams.get('bg') || '';
@@ -494,7 +494,7 @@
 
     const customValidWords = new Set([
       'ALBUM', 'VINYL', 'AUDIO', 'STAGE', 'TRACK', 'VOCAL', 'CHORD', 'GENRE', 'MUSIC',
-      'SINGLE', 'ARTIST', 'GUITAR', 'RECORD', 'STUDIO', 'TOURING', 'KOJI', 'SONY'
+      'SINGLE', 'ARTIST', 'GUITAR', 'RECORD', 'STUDIO', 'TOURING', 'KOJI', 'SONY', 'VARLEY'
     ]);
 
     function applyBrandColor(color) {
@@ -504,11 +504,18 @@
 
     function applyBackgroundImage(url) {
       const bgLayer = document.getElementById('bg-layer');
-      if (url) {
-        bgLayer.style.backgroundImage = `url('${url}')`;
-      } else {
+      if (!url) {
         bgLayer.style.backgroundImage = 'none';
+        return;
       }
+
+      // Automatically fix relative file paths (e.g. logo.png) on GitHub Pages
+      if (!url.startsWith('http') && !url.startsWith('data:')) {
+        const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+        url = baseUrl + url;
+      }
+
+      bgLayer.style.backgroundImage = `url('${url}')`;
     }
 
     function setBgSourceMode(mode) {
