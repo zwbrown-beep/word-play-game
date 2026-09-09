@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Koji's Word Play</title>
+  <title>Koji's Word Play - Sony Music</title>
   <style>
     :root {
-      --brand-color: #6aaa64;
-      --color-correct: #6aaa64;
-      --color-present: #c9b458;
-      --color-absent: #3a3a3c;
-      --color-border: #3a3a3c;
-      --color-tile-active: #565758;
-      --color-bg: #121213;
+      --brand-color: #ff0055;        /* Neon Pink instead of Wordle Green */
+      --color-correct: #ff0055;      /* Hit Spot */
+      --color-present: #00e5ff;      /* Electric Cyan instead of Yellow */
+      --color-absent: #2a2a2e;       /* Off Key */
+      --color-border: #44444c;
+      --color-tile-active: #ff0055;
+      --color-bg: #0c0c0e;
     }
 
     * { box-sizing: border-box; font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif; }
@@ -37,7 +37,7 @@
       top: 0; left: 0; right: 0; bottom: 0;
       background-size: cover;
       background-position: center;
-      filter: blur(4px) brightness(0.4);
+      filter: blur(4px) brightness(0.35);
       transform: scale(1.05);
       z-index: -1;
       transition: background-image 0.5s ease-in-out;
@@ -45,7 +45,7 @@
 
     header {
       text-align: center;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
       width: 100%;
       max-width: 500px;
       padding: 4px 45px 6px 45px;
@@ -58,11 +58,11 @@
       margin: 0;
       font-size: clamp(1.2rem, 4vw, 1.7rem);
       letter-spacing: 2px;
-      font-weight: 700;
+      font-weight: 800;
       text-transform: uppercase;
       color: var(--brand-color);
       transition: color 0.3s ease;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      text-shadow: 0 0 10px rgba(255,0,85,0.4);
       line-height: 1.1;
       word-break: break-word;
     }
@@ -79,32 +79,21 @@
       word-break: break-word;
     }
 
-    #hidden-admin-trigger {
-      position: absolute;
-      top: 0; left: 0;
-      width: 44px; height: 100%;
-      opacity: 0; cursor: pointer; z-index: 10;
-    }
-
-    #hidden-reset-trigger {
-      position: absolute;
-      top: 0; right: 0;
-      width: 44px; height: 100%;
-      opacity: 0; cursor: pointer; z-index: 10;
-    }
+    #hidden-admin-trigger { position: absolute; top: 0; left: 0; width: 44px; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
+    #hidden-reset-trigger { position: absolute; top: 0; right: 0; width: 44px; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
 
     #toast {
       position: fixed;
       top: 70px;
-      background-color: #ffffff;
-      color: #000000;
+      background-color: var(--brand-color);
+      color: #ffffff;
       padding: 8px 16px;
-      border-radius: 5px;
+      border-radius: 20px;
       font-weight: bold;
       font-size: 0.85rem;
       z-index: 200;
       display: none;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      box-shadow: 0 0 15px rgba(255,0,85,0.5);
       animation: fadeIn 0.2s ease-in-out;
     }
 
@@ -120,7 +109,7 @@
     #game-board {
       display: grid;
       grid-template-rows: repeat(6, 1fr);
-      grid-gap: 4px;
+      grid-gap: 6px;
       padding: 4px;
       width: 100%;
       max-width: 340px;
@@ -128,8 +117,9 @@
       max-height: 390px;
     }
 
-    .row { display: grid; grid-gap: 4px; }
+    .row { display: grid; grid-gap: 6px; }
 
+    /* Music Capsule / Disc Tile Style */
     .tile {
       width: 100%;
       height: 100%;
@@ -137,6 +127,7 @@
       max-height: 58px;
       margin: 0 auto;
       border: 2px solid var(--color-border);
+      border-radius: 12px; /* Distinct rounded corners */
       display: flex;
       justify-content: center;
       align-items: center;
@@ -144,41 +135,35 @@
       font-weight: bold;
       text-transform: uppercase;
       user-select: none;
-      background-color: rgba(18, 18, 19, 0.65);
+      background-color: rgba(20, 20, 24, 0.75);
       color: white;
       backdrop-filter: blur(4px);
+      transition: border-color 0.2s, transform 0.1s;
     }
 
     .tile[data-state="active"] {
       border-color: var(--color-tile-active);
-      animation: pop 0.1s ease-in-out;
-    }
-
-    @keyframes pop {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.08); }
-      100% { transform: scale(1); }
+      box-shadow: 0 0 8px var(--color-tile-active);
+      transform: scale(1.04);
     }
 
     .shake { animation: shake 0.5s; }
-
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
       20%, 60% { transform: translateX(-5px); }
       40%, 80% { transform: translateX(5px); }
     }
 
-    .flip { animation: flip 0.5s forwards; }
-
-    @keyframes flip {
-      0% { transform: rotateX(0deg); }
-      50% { transform: rotateX(90deg); }
-      100% { transform: rotateX(0deg); }
+    .pulse { animation: pulse 0.4s forwards; }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.12); }
+      100% { transform: scale(1); }
     }
 
-    .tile[data-state="correct"] { background-color: var(--color-correct) !important; border-color: var(--color-correct) !important; }
-    .tile[data-state="present"] { background-color: var(--color-present) !important; border-color: var(--color-present) !important; }
-    .tile[data-state="absent"] { background-color: var(--color-absent) !important; border-color: var(--color-absent) !important; }
+    .tile[data-state="correct"] { background-color: var(--color-correct) !important; border-color: var(--color-correct) !important; color: #fff; }
+    .tile[data-state="present"] { background-color: var(--color-present) !important; border-color: var(--color-present) !important; color: #000; }
+    .tile[data-state="absent"] { background-color: var(--color-absent) !important; border-color: var(--color-absent) !important; color: #777; }
 
     #keyboard {
       display: flex;
@@ -198,10 +183,10 @@
     }
 
     .key {
-      background-color: rgba(129, 131, 132, 0.85);
+      background-color: rgba(45, 45, 52, 0.85);
       color: white;
       border: 0;
-      border-radius: 4px;
+      border-radius: 6px;
       height: clamp(42px, 6vh, 52px);
       flex: 1;
       font-weight: bold;
@@ -216,52 +201,49 @@
     }
 
     .key.wide { flex: 1.5; font-size: 0.75rem; }
-    .key[data-state="correct"] { background-color: var(--color-correct); }
-    .key[data-state="present"] { background-color: var(--color-present); }
-    .key[data-state="absent"] { background-color: var(--color-absent); }
+    .key[data-state="correct"] { background-color: var(--color-correct); color: #fff; }
+    .key[data-state="present"] { background-color: var(--color-present); color: #000; }
+    .key[data-state="absent"] { background-color: var(--color-absent); opacity: 0.5; }
 
     .modal-overlay {
       display: none;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.85);
+      background: rgba(0,0,0,0.88);
       z-index: 100;
       justify-content: center;
       align-items: center;
       animation: fadeIn 0.3s ease-in-out;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
     .modal-content {
-      background: #1e1e1e;
+      background: #18181c;
       padding: 25px 20px;
-      border-radius: 12px;
+      border-radius: 16px;
       width: 90%;
       max-width: 380px;
-      box-shadow: 0 0 25px rgba(0,0,0,0.9);
+      box-shadow: 0 0 30px rgba(255,0,85,0.25);
       border: 1px solid #333;
       text-align: center;
     }
 
-    .modal-content h3 { margin-top: 0; font-size: 1.6rem; letter-spacing: 1px; }
+    .modal-content h3 { margin-top: 0; font-size: 1.6rem; letter-spacing: 1px; color: var(--color-correct); }
     .modal-content p { color: #ccc; font-size: 0.95rem; margin: 10px 0 15px 0; }
 
     .result-word {
       font-size: 1.8rem;
       font-weight: bold;
       letter-spacing: 4px;
-      color: var(--color-correct);
-      background: #2a2a2a;
+      color: #ffffff;
+      background: #25252b;
       padding: 10px;
       border-radius: 8px;
       margin: 10px 0;
       display: inline-block;
       width: 100%;
-      transition: color 0.3s ease;
+      border: 1px solid var(--color-correct);
     }
 
     .form-group { margin-bottom: 12px; text-align: left; }
@@ -271,93 +253,30 @@
       background: #2a2a2a; color: white; font-size: 0.95rem; box-sizing: border-box;
     }
 
-    .source-toggle {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 8px;
-    }
-
+    .source-toggle { display: flex; gap: 10px; margin-bottom: 8px; }
     .toggle-btn {
-      flex: 1;
-      padding: 6px;
-      font-size: 0.75rem;
-      font-weight: bold;
-      background: #2a2a2a;
-      border: 1px solid #444;
-      color: #aaa;
-      border-radius: 4px;
-      cursor: pointer;
-      text-align: center;
+      flex: 1; padding: 6px; font-size: 0.75rem; font-weight: bold; background: #2a2a2a;
+      border: 1px solid #444; color: #aaa; border-radius: 4px; cursor: pointer; text-align: center;
     }
-
-    .toggle-btn.active {
-      background: var(--color-correct);
-      color: #fff;
-      border-color: var(--color-correct);
-    }
-
-    .file-picker-wrapper {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .file-picker-btn {
-      background: #333;
-      color: #fff;
-      padding: 8px 12px;
-      border-radius: 5px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      border: 1px solid #555;
-      font-weight: bold;
-    }
-
-    .file-picker-btn:active { background: #555; }
-
-    .btn-clear-photo {
-      background: #d32f2f;
-      color: white;
-      border: none;
-      padding: 8px 10px;
-      border-radius: 5px;
-      font-size: 0.8rem;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .color-picker-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: #2a2a2a;
-      padding: 6px 12px;
-      border-radius: 5px;
-      border: 1px solid #444;
-    }
-
-    .color-picker-wrapper input[type="color"] {
-      -webkit-appearance: none;
-      border: none;
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      cursor: pointer;
-      background: none;
-    }
-
+    .toggle-btn.active { background: var(--color-correct); color: #fff; border-color: var(--color-correct); }
+    .file-picker-wrapper { display: flex; gap: 8px; align-items: center; }
+    .file-picker-btn { background: #333; color: #fff; padding: 8px 12px; border-radius: 5px; font-size: 0.85rem; cursor: pointer; border: 1px solid #555; font-weight: bold; }
+    .btn-clear-photo { background: #d32f2f; color: white; border: none; padding: 8px 10px; border-radius: 5px; font-size: 0.8rem; cursor: pointer; font-weight: bold; }
+    .color-picker-wrapper { display: flex; align-items: center; gap: 12px; background: #2a2a2a; padding: 6px 12px; border-radius: 5px; border: 1px solid #444; }
+    .color-picker-wrapper input[type="color"] { -webkit-appearance: none; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; background: none; }
     .color-picker-wrapper input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
     .color-picker-wrapper input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
 
     .btn-group { display: flex; gap: 10px; margin-top: 15px; }
     .btn { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
-    .btn-save { background: var(--color-correct); color: white; transition: background 0.3s ease; }
+    .btn-save { background: var(--color-correct); color: white; }
     .btn-cancel { background: #444; color: white; }
   </style>
 </head>
 <body>
 
   <div id="bg-layer"></div>
-  <div id="toast">Not in word list</div>
+  <div id="toast">Off Key</div>
 
   <header>
     <div id="hidden-admin-trigger" onclick="openAdmin()"></div>
@@ -395,7 +314,7 @@
       <button class="key" data-key="L">L</button>
     </div>
     <div class="k-row">
-      <button class="key wide" data-key="ENTER">ENTER</button>
+      <button class="key wide" data-key="ENTER">SUBMIT</button>
       <button class="key" data-key="Z">Z</button>
       <button class="key" data-key="X">X</button>
       <button class="key" data-key="C">C</button>
@@ -409,12 +328,12 @@
 
   <div id="result-modal" class="modal-overlay">
     <div class="modal-content">
-      <h3 id="result-title">VICTORY!</h3>
-      <p id="result-message">You solved the word in 3 tries!</p>
+      <h3 id="result-title">HIT SINGLE!</h3>
+      <p id="result-message">You nailed the track in 3 takes!</p>
       <div id="result-word-display" class="result-word">ALBUM</div>
       <div class="btn-group">
         <button class="btn btn-save" onclick="closeResult()">Close</button>
-        <button class="btn btn-cancel" onclick="resetGame()">Play Again</button>
+        <button class="btn btn-cancel" onclick="resetGame()">Next Take</button>
       </div>
     </div>
   </div>
@@ -453,8 +372,8 @@
       <div class="form-group">
         <label>Artist Brand Color</label>
         <div class="color-picker-wrapper">
-          <input type="color" id="admin-color" value="#6aaa64">
-          <span id="admin-color-hex" style="font-size: 0.85rem; color: #ccc; font-weight: bold;">#6AAA64</span>
+          <input type="color" id="admin-color" value="#ff0055">
+          <span id="admin-color-hex" style="font-size: 0.85rem; color: #ccc; font-weight: bold;">#FF0055</span>
         </div>
       </div>
       <div class="btn-group">
@@ -484,7 +403,7 @@
     }
 
     let guestName = urlParams.get('guest') || 'Special Guest';
-    let brandColor = urlParams.get('color') ? `#${urlParams.get('color')}` : '#6aaa64';
+    let brandColor = urlParams.get('color') ? `#${urlParams.get('color')}` : '#ff0055';
     let bgImage = urlParams.get('bg') || '';
     let bgSourceMode = 'file';
 
@@ -494,7 +413,6 @@
     let currentGuess = '';
     let isGameOver = false;
 
-    // Comprehensive offline dictionary dataset covering standard English words + show specific custom terms
     const validDictionary = new Set([
       "ABOUT","ABOVE","ABUSE","ACTOR","ACUTE","ADMIT","ADOPT","ADULT","AFTER","AGAIN","AGENT","AGREE","AHEAD","ALARM","ALBUM","ALERT","ALIEN","ALIKE","ALIVE","ALLOW","ALONE","ALONG","ALTER","ALWAYS","AMONG","ANGER","ANGLE","ANGRY","APART","APPLE","APPLY","ARENA","ARGUE","ARISE","ARRAY","ASIDE","ASSET","AUDIO","AUDIT","AVOID","AWARD","AWARE","BADLY","BAKER","BASES","BASIC","BASIS","BEACH","BEGAN","BEGIN","BEGUN","BEING","BELOW","BENCH","BILLY","BIRTH","BLACK","BLADE","BLAME","BLIND","BLOCK","BLOOD","BOARD","BOOST","BOOTH","BOUND","BRAIN","BRAND","BREAD","BREAK","BREED","BRIEF","BRING","BROAD","BROWN","BUILD","BUILT","BUYER","CABLE","CALIF","CARRY","CATCH","CAUSE","CHAIN","CHAIR","CHAOS","CHART","CHASE","CHEAP","CHECK","CHEST","CHIEF","CHILD","CHINA","CHOSE","CIVIL","CLAIM","CLASS","CLEAN","CLEAR","CLICK","CLOCK","CLOSE","COACH","COAST","COLOR","COUNT","COURT","COVER","CRAFT","CRASH","CREAM","CRIME","CROSS","CROWD","CROWN","CYCLE","DAILY","DANCE","DATED","DEALT","DEATH","DEBUG","DELAY","DEPTH","DIRTY","DISCO","DOUBT","DOZEN","DRAFT","DRAMA","DREAM","DRESS","DRILL","DRINK","DRIVE","DROVE","DYING","EAGER","EARLY","EARTH","EIGHT","ELITE","EMPTY","ENEMY","ENJOY","ENTER","ENTRY","EQUAL","ERROR","EVENT","EVERY","EXACT","EXIST","EXTRA","FAITH","FALSE","FAULT","FIBER","FIELD","FIFTH","FIFTY","FINAL","FIRST","FIXED","FLASH","FLEET","FLOOR","FLUID","FOCUS","FORCE","FORUM","FORTH","FORTY","FOUND","FRAME","FRANK","FRAUD","FRESH","FRONT","FRUIT","FULLY","FUNNY","GIANT","GIVEN","GLASS","GLOBE","GOING","GRACE","GRADE","GRAND","GRANT","GRASS","GREAT","GREEN","GROSS","GROUP","GROWN","GUARD","GUESS","GUEST","GUIDE","HAPPY","HORSE","HOTEL","HOUSE","HUMAN","IDEAL","IMAGE","INDEX","INNER","INPUT","ISSUE","JAPAN","JOINT","JUDGE","JUICE","KNIFE","LABOR","LARGE","LASER","LATER","LAUGH","LAYER","LEARN","LEASE","LEAST","LEAVE","LEGAL","LEVEL","LIGHT","LIMIT","LOCAL","LOGIC","LOOSE","LOWER","LUCKY","LUNCH","MAGIC","MAJOR","MAKER","MARCH","MATCH","MAYBE","MAYOR","MEDIA","METAL","MIGHT","MINOR","MINUS","MODEL","MONEY","MONTH","MOTOR","MOUNT","MOUSE","MOUTH","MOVIE","MUSIC","NEEDS","NEVER","NEWLY","NIGHT","NOISE","NORTH","NOTED","NOVEL","NURSE","OFFER","OFTEN","ORDER","OTHER","OUGHT","PAINT","PANEL","PAPER","PARTY","PARTZ","PARTS","PEACE","PETER","PHASE","PHONE","PHOTO","PIECE","PILOT","PITCH","PLACE","PLAIN","PLANE","PLANT","PLATE","POINT","POUND","POWER","PRESS","PRICE","PRIDE","PRIME","PRIZE","PROOF","PROUD","PROVE","QUEEN","QUICK","QUIET","QUITE","RADIO","RAISE","RANGE","RAPID","RATIO","REACH","READY","REFER","RIGHT","RIVAL","RIVER","ROBIN","ROGER","ROMAN","ROUGH","ROUND","ROUTE","ROYAL","RULED","SCALE","SCENE","SCOPE","SCORE","SENSE","SERVE","SEVEN","SHALL","SHARE","SHARP","SHEET","SHELF","SHELL","SHIFT","SHIRT","SHOOT","SHORT","SHOWN","SIGHT","SINCE","SIXTH","SIXTY","SIZED","SKILL","SLEEP","SLIDE","SMALL","SMART","SMILE","SMITH","SMOKE","SOLID","SOLVE","SORRY","SOUND","SOUTH","SPACE","SPARE","SPEAK","SPEED","SPEND","SPENT","SPLIT","SPOKE","SPORT","STAFF","STAGE","STAKE","STAND","START","STATE","STEAM","STEEL","STICK","STILL","STOCK","STONE","STOOD","STORE","STORY","STRIP","STUCK","STUDY","STUFF","STYLE","SUGAR","SUITE","SUPER","SWEET","TABLE","TAKEN","TASTE","TAXES","TEACH","TEETH","TEXAS","THANK","THEFT","THEIR","THEME","THERE","THESE","THICK","THING","THINK","THIRD","THOSE","THREE","THREW","THROW","TIGHT","TIMES","TITLE","TODAY","TOPIC","TOTAL","TOUCH","TOUGH","TOWER","TRACK","TRADE","TRAIN","TREAT","TREND","TRIAL","TRIED","TRIES","TRUCK","TRULY","TRUST","TRUTH","TWICE","UNDER","UNION","UNITY","UNTIL","UPPER","UPSET","URBAN","USAGE","USUAL","VALID","VALUE","VIDEO","VIRUS","VISIT","VITAL","VOICE","WASTE","WATCH","WATER","WHEEL","WHERE","WHICH","WHILE","WHITE","WHOLE","WHOSE","WOMAN","WOMEN","WORLD","WORRY","WORST","WORTH","WOULD","WOUND","WRITE","WRONG","WROTE","YIELD","YOUNG","YOUTH",
       "ACTION","ACTUAL","ADVICE","AGENCY","AGREED","ALMOST","ALWAYS","AMOUNT","ANIMAL","ANNUAL","ANSWER","ANYONE","ANYWAY","APPEAL","APPEAR","ARTIST","BAND","BASS","BEAT","CHORD","CLUB","DANCE","DEALS","DISC","DRUM","FOCUS","GENRE","GUITAR","JAZZ","KOJI","LIVE","MEDIA","MUSIC","PARTY","PIRATE","POP","RECORD","ROCK","ROSTER","SHOW","SINGLE","SONG","SONY","SOUL","STAGE","STAR","STUDIO","TALENT","TOUR","TOURING","TRACK","VARLEY","VINYL","VOCAL","YOUTHS"
@@ -601,7 +519,6 @@
 
     function isValidWord(word) {
       if (word.length !== wordLength) return false;
-      // Strict client-side check against official dictionary + current target word
       return validDictionary.has(word) || word === targetWord;
     }
 
@@ -622,7 +539,7 @@
           if (isValidWord(currentGuess)) {
             checkGuess();
           } else {
-            showToast("Not in word list");
+            showToast("Off Key");
             shakeRow();
           }
         } else {
@@ -653,7 +570,6 @@
       const targetArr = targetWord.split('');
       const tileStates = Array(wordLength).fill('absent');
 
-      // Exact matches
       guessArr.forEach((char, i) => {
         if (char === targetArr[i]) {
           tileStates[i] = 'correct';
@@ -661,7 +577,6 @@
         }
       });
 
-      // Partial matches
       guessArr.forEach((char, i) => {
         if (tileStates[i] !== 'correct' && targetArr.includes(char)) {
           tileStates[i] = 'present';
@@ -669,14 +584,13 @@
         }
       });
 
-      // Flip animation sequence
       guessArr.forEach((char, i) => {
         const tile = document.getElementById(`tile-${currentAttempt}-${i}`);
         const key = document.querySelector(`.key[data-key="${char}"]`);
 
         if (tile) {
           setTimeout(() => {
-            tile.classList.add('flip');
+            tile.classList.add('pulse');
             tile.setAttribute('data-state', tileStates[i]);
 
             if (key) {
@@ -689,7 +603,7 @@
                 key.setAttribute('data-state', 'absent');
               }
             }
-          }, i * 250);
+          }, i * 200);
         }
       });
 
@@ -705,7 +619,7 @@
             showResult(false);
           }
         }
-      }, wordLength * 250 + 300);
+      }, wordLength * 200 + 300);
     }
 
     function showResult(isWin) {
@@ -717,11 +631,11 @@
       wordDisplay.innerText = targetWord;
 
       if (isWin) {
-        title.innerText = "CHALLENGE PASSED!";
+        title.innerText = "HIT SINGLE!";
         title.style.color = "var(--color-correct)";
-        msg.innerText = `${guestName} guessed it in ${currentAttempt + 1}/${maxAttempts} attempts!`;
+        msg.innerText = `${guestName} nailed it in ${currentAttempt + 1}/${maxAttempts} takes!`;
       } else {
-        title.innerText = "GAME OVER!";
+        title.innerText = "OUT OF TAKES!";
         title.style.color = "#e53935";
         msg.innerText = `${guestName} ran out of guesses!`;
       }
