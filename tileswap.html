@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Koji's TileSwap - Sony Music</title>
+  <style>
+    :root {
+      --brand-color: #ff0055;        /* Neon Pink Accent */
+      --color-correct: #ff0055;      /* Correct Position */
+      --color-present: #00e5ff;      /* Wrong Position */
+      --color-absent: #2a2a2e;       /* Distractor/Incorrect */
+      --color-border: #44444c;
+      --color-bg: #0c0c0e;
+    }
+
+    * { box-sizing: border-box; font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif; }
+
+    body {
+      background-color: var(--color-bg);
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      height: 100vh;
+      margin: 0;
+      padding: 10px;
+      touch-action: manipulation;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #bg-layer {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-size: cover;
+      background-position: center;
+      filter: blur(5px) brightness(0.35);
+      transform: scale(1.05);
+      z-index: -1;
+      transition: background-image 0.5s ease-in-out;
+    }
+
+    header {
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      width: 100%;
+      max-width: 500px;
+      padding: 10px 45px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.3rem, 4vw, 1.8rem);
+      letter-spacing: 3px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--brand-color);
+      text-shadow: 0 0 12px rgba(255,0,85,0.4);
+      line-height: 1.1;
+    }
+
+    h2 {
+      margin: 4px 0 0;
+      font-size: clamp(0.75rem, 2.5vw, 0.9rem);
+      color: #dddddd;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    #hidden-admin-trigger { position: absolute; top: 0; left: 0; width: 44px; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
+    #hidden-reset-trigger { position: absolute; top: 0; right: 0; width: 44px; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
+
+    /* Game Container */
+    #game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-grow: 1;
+      width: 100%;
+      max-width: 500px;
+      gap: 20px;
+    }
+
+    #stats-bar {
+      display: flex;
+      gap: 25px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      color: #bbb;
+      background: rgba(20, 20, 26, 0.7);
+      padding: 8px 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(4px);
+    }
+
+    #stats-bar span { color: var(--brand-color); }
+
+    /* Tile Rack */
+    #tile-rack {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 10px;
+    }
+
+    .tile {
+      width: clamp(48px, 13vw, 65px);
+      height: clamp(58px, 15vw, 75px);
+      border: 2px solid var(--color-border);
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: clamp(1.5rem, 5vw, 2.2rem);
+      font-weight: 800;
+      text-transform: uppercase;
+      user-select: none;
+      background: rgba(25, 25, 32, 0.85);
+      color: #ffffff;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    .tile.selected {
+      border-color: #00e5ff;
+      box-shadow: 0 0 15px #00e5ff;
+      transform: translateY(-8px) scale(1.05);
+      background: rgba(0, 229, 255, 0.15);
+    }
+
+    .tile[data-state="correct"] {
+      background-color: var(--color-correct) !important;
+      border-color: var(--color-correct) !important;
+      box-shadow: 0 0 12px var(--color-correct);
+      color: #ffffff;
+    }
+
+    .tile[data-state="present"] {
+      background-color: var(--color-present) !important;
+      border-color: var(--color-present) !important;
+      box-shadow: 0 0 12px var(--color-present);
+      color: #000000;
+    }
+
+    .tile[data-state="absent"] {
+      background-color: var(--color-absent) !important;
+      border-color: var(--color-absent) !important;
+      color: #666666;
+    }
+
+    /* Action Buttons */
+    .controls {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .btn-action {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 1rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: transform 0.1s, background 0.2s;
+    }
+
+    .btn-action:active { transform: scale(0.97); }
+
+    .btn-submit {
+      background: var(--brand-color);
+      color: #ffffff;
+      box-shadow: 0 0 15px rgba(255,0,85,0.4);
+    }
+
+    .btn-shuffle {
+      background: #2a2a32;
+      color: #cccccc;
+      border: 1px solid #444;
+    }
+
+    /* Modals */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.88);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .modal-content {
+      background: #18181c;
+      padding: 25px 20px;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 380px;
+      box-shadow: 0 0 30px rgba(255,0,85,0.25);
+      border: 1px solid #333;
+      text-align: center;
+    }
+
+    .modal-content h3 { margin-top: 0; font-size: 1.6rem; color: var(--brand-color); }
+    .modal-content p { color: #ccc; font-size: 0.95rem; margin: 10px 0 15px 0; }
+
+    .result-word {
+      font-size: 1.8rem;
+      font-weight: bold;
+      letter-spacing: 4px;
+      color: #ffffff;
+      background: #25252b;
+      padding: 10px;
+      border-radius: 8px;
+      margin: 10px 0;
+      display: inline-block;
+      width: 100%;
+      border: 1px solid var(--brand-color);
+    }
+
+    .form-group { margin-bottom: 12px; text-align: left; }
+    .form-group label { display: block; margin-bottom: 4px; font-size: 0.8rem; color: #aaa; }
+    .form-group input[type="text"] {
+      width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #444;
+      background: #2a2a2a; color: white; font-size: 0.95rem; box-sizing: border-box;
+    }
+
+    .source-toggle { display: flex; gap: 10px; margin-bottom: 8px; }
+    .toggle-btn { flex: 1; padding: 6px; font-size: 0.75rem; font-weight: bold; background: #2a2a2a; border: 1px solid #444; color: #aaa; border-radius: 4px; cursor: pointer; text-align: center; }
+    .toggle-btn.active { background: var(--brand-color); color: #fff; border-color: var(--brand-color); }
+    .file-picker-wrapper { display: flex; gap: 8px; align-items: center; }
+    .file-picker-btn { background: #333; color: #fff; padding: 8px 12px; border-radius: 5px; font-size: 0.85rem; cursor: pointer; border: 1px solid #555; font-weight: bold; }
+    .btn-clear-photo { background: #d32f2f; color: white; border: none; padding: 8px 10px; border-radius: 5px; font-size: 0.8rem; cursor: pointer; font-weight: bold; }
+    .color-picker-wrapper { display: flex; align-items: center; gap: 12px; background: #2a2a2a; padding: 6px 12px; border-radius: 5px; border: 1px solid #444; }
+    .color-picker-wrapper input[type="color"] { -webkit-appearance: none; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; background: none; }
+    .color-picker-wrapper input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    .color-picker-wrapper input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+
+    .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+    .btn { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
+    .btn-save { background: var(--brand-color); color: white; }
+    .btn-cancel { background: #444; color: white; }
+  </style>
+</head>
+<body>
+
+  <div id="bg-layer"></div>
+
+  <header>
+    <div id="hidden-admin-trigger" onclick="openAdmin()"></div>
+    <div id="hidden-reset-trigger" onclick="resetGame()"></div>
+    <h1 id="title">KOJI'S TILE SWAP</h1>
+    <h2 id="subtitle">GUEST CHALLENGE</h2>
+  </header>
+
+  <div id="game-container">
+    <div id="stats-bar">
+      <div>TAKES: <span id="takes-count">0</span></div>
+      <div>SWAPS: <span id="swaps-count">0</span></div>
+    </div>
+
+    <div id="tile-rack"></div>
+
+    <div class="controls">
+      <button class="btn-action btn-shuffle" onclick="shuffleTiles()">Shuffle</button>
+      <button class="btn-action btn-submit" onclick="submitTake()">Submit Take</button>
+    </div>
+  </div>
+
+  <!-- End Game Modal -->
+  <div id="result-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 id="result-title">TRACK SOLVED!</h3>
+      <p id="result-message">You unscrambled the word in 3 takes!</p>
+      <div id="result-word-display" class="result-word">VARLEY</div>
+      <div class="btn-group">
+        <button class="btn btn-save" onclick="closeResult()">Close</button>
+        <button class="btn btn-cancel" onclick="resetGame()">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Producer Panel Modal -->
+  <div id="admin-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h3>Producer Panel</h3>
+      <div class="form-group">
+        <label>Guest / Band Name</label>
+        <input type="text" id="admin-guest" placeholder="e.g. Bring Me The Horizon">
+      </div>
+      <div class="form-group">
+        <label>Target Word (4, 5, or 6 Letters)</label>
+        <input type="text" id="admin-word" placeholder="e.g. VARLEY" maxlength="6">
+      </div>
+      
+      <div class="form-group">
+        <label>Background Image Source</label>
+        <div class="source-toggle">
+          <div id="toggle-file-btn" class="toggle-btn active" onclick="setBgSourceMode('file')">Photo Library</div>
+          <div id="toggle-url-btn" class="toggle-btn" onclick="setBgSourceMode('url')">Image URL</div>
+        </div>
+
+        <div id="bg-file-container" class="file-picker-wrapper">
+          <label for="admin-bg-file" class="file-picker-btn">Choose Photo...</label>
+          <input type="file" id="admin-bg-file" accept="image/*" style="display:none;" onchange="handleFileSelect(event)">
+          <span id="bg-file-name" style="font-size: 0.8rem; color: #aaa; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">No photo loaded</span>
+          <button class="btn-clear-photo" onclick="clearPhoto()">Clear</button>
+        </div>
+
+        <div id="bg-url-container" style="display: none;">
+          <input type="text" id="admin-bg-url" placeholder="https://example.com/album-art.jpg">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Artist Brand Color</label>
+        <div class="color-picker-wrapper">
+          <input type="color" id="admin-color" value="#ff0055">
+          <span id="admin-color-hex" style="font-size: 0.85rem; color: #ccc; font-weight: bold;">#FF0055</span>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-cancel" onclick="closeAdmin()">Cancel</button>
+        <button class="btn btn-save" onclick="saveAdmin()">Save & Launch</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    let rawWordParam = urlParams.get('w');
+    let targetWord = 'VARLEY';
+    if (rawWordParam) {
+      try { targetWord = atob(rawWordParam).trim().toUpperCase(); } catch (e) { targetWord = 'VARLEY'; }
+    } else if (urlParams.get('word')) {
+      targetWord = urlParams.get('word').trim().toUpperCase();
+    }
+
+    if (targetWord.length < 4 || targetWord.length > 6) targetWord = 'VARLEY';
+
+    let guestName = urlParams.get('guest') || 'Special Guest';
+    let brandColor = urlParams.get('color') ? `#${urlParams.get('color')}` : '#ff0055';
+    let bgImage = urlParams.get('bg') || '';
+    let bgSourceMode = 'file';
+
+    let currentTiles = [];
+    let selectedIndex = null;
+    let takesCount = 0;
+    let swapsCount = 0;
+    let isGameOver = false;
+
+    function applyBrandColor(color) {
+      document.documentElement.style.setProperty('--brand-color', color);
+    }
+
+    function applyBackgroundImage(url) {
+      const bgLayer = document.getElementById('bg-layer');
+      if (!url) { bgLayer.style.backgroundImage = 'none'; return; }
+      if (!url.startsWith('http') && !url.startsWith('data:')) {
+        const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+        url = baseUrl + url;
+      }
+      bgLayer.style.backgroundImage = `url('${url}')`;
+    }
+
+    function initGame() {
+      takesCount = 0;
+      swapsCount = 0;
+      isGameOver = false;
+      selectedIndex = null;
+
+      document.getElementById('takes-count').innerText = takesCount;
+      document.getElementById('swaps-count').innerText = swapsCount;
+      document.getElementById('subtitle').innerText = `KOJI VS. ${guestName}`;
+
+      applyBrandColor(brandColor);
+      applyBackgroundImage(bgImage);
+
+      // Create guaranteed scrambled array
+      currentTiles = targetWord.split('');
+      do {
+        currentTiles.sort(() => Math.random() - 0.5);
+      } while (currentTiles.join('') === targetWord);
+
+      renderRack();
+      closeResult();
+    }
+
+    function renderRack() {
+      const rack = document.getElementById('tile-rack');
+      rack.innerHTML = '';
+
+      currentTiles.forEach((letter, index) => {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        tile.innerText = letter;
+
+        if (index === selectedIndex) {
+          tile.classList.add('selected');
+        }
+
+        tile.addEventListener('click', () => handleTileClick(index));
+        rack.appendChild(tile);
+      });
+    }
+
+    function handleTileClick(index) {
+      if (isGameOver) return;
+
+      if (selectedIndex === null) {
+        selectedIndex = index;
+      } else if (selectedIndex === index) {
+        selectedIndex = null;
+      } else {
+        // Swap tiles
+        const temp = currentTiles[selectedIndex];
+        currentTiles[selectedIndex] = currentTiles[index];
+        currentTiles[index] = temp;
+        selectedIndex = null;
+        swapsCount++;
+        document.getElementById('swaps-count').innerText = swapsCount;
+      }
+      renderRack();
+    }
+
+    function shuffleTiles() {
+      if (isGameOver) return;
+      currentTiles.sort(() => Math.random() - 0.5);
+      selectedIndex = null;
+      renderRack();
+    }
+
+    function submitTake() {
+      if (isGameOver) return;
+
+      takesCount++;
+      document.getElementById('takes-count').innerText = takesCount;
+
+      const targetArr = targetWord.split('');
+      const tileElements = document.querySelectorAll('.tile');
+      const tileStates = Array(targetWord.length).fill('absent');
+
+      // Check exact positions
+      currentTiles.forEach((char, i) => {
+        if (char === targetArr[i]) {
+          tileStates[i] = 'correct';
+          targetArr[i] = null;
+        }
+      });
+
+      // Check present letters
+      currentTiles.forEach((char, i) => {
+        if (tileStates[i] !== 'correct' && targetArr.includes(char)) {
+          tileStates[i] = 'present';
+          targetArr[targetArr.indexOf(char)] = null;
+        }
+      });
+
+      // Apply state animations
+      tileElements.forEach((tile, i) => {
+        tile.setAttribute('data-state', tileStates[i]);
+      });
+
+      if (currentTiles.join('') === targetWord) {
+        isGameOver = true;
+        setTimeout(() => showResult(true), 600);
+      }
+    }
+
+    function showResult(isWin) {
+      const modal = document.getElementById('result-modal');
+      const title = document.getElementById('result-title');
+      const msg = document.getElementById('result-message');
+      const wordDisplay = document.getElementById('result-word-display');
+
+      wordDisplay.innerText = targetWord;
+      title.innerText = "TRACK SOLVED!";
+      msg.innerText = `${guestName} solved it in ${takesCount} take(s) and ${swapsCount} swap(s)!`;
+
+      modal.style.display = 'flex';
+    }
+
+    function closeResult() { document.getElementById('result-modal').style.display = 'none'; }
+    function resetGame() { initGame(); }
+
+    function setBgSourceMode(mode) {
+      bgSourceMode = mode;
+      const fileBtn = document.getElementById('toggle-file-btn');
+      const urlBtn = document.getElementById('toggle-url-btn');
+      const fileContainer = document.getElementById('bg-file-container');
+      const urlContainer = document.getElementById('bg-url-container');
+
+      if (mode === 'file') {
+        fileBtn.classList.add('active'); urlBtn.classList.remove('active');
+        fileContainer.style.display = 'flex'; urlContainer.style.display = 'none';
+      } else {
+        urlBtn.classList.add('active'); fileBtn.classList.remove('active');
+        urlContainer.style.display = 'block'; fileContainer.style.display = 'none';
+      }
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          bgImage = e.target.result;
+          document.getElementById('bg-file-name').innerText = file.name;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function clearPhoto() {
+      bgImage = '';
+      document.getElementById('admin-bg-file').value = '';
+      document.getElementById('admin-bg-url').value = '';
+      document.getElementById('bg-file-name').innerText = 'No photo loaded';
+    }
+
+    function openAdmin() {
+      document.getElementById('admin-guest').value = guestName;
+      document.getElementById('admin-word').value = targetWord;
+      document.getElementById('admin-color').value = brandColor;
+      document.getElementById('admin-color-hex').innerText = brandColor.toUpperCase();
+      document.getElementById('admin-modal').style.display = 'flex';
+    }
+
+    function closeAdmin() { document.getElementById('admin-modal').style.display = 'none'; }
+
+    function saveAdmin() {
+      const g = document.getElementById('admin-guest').value.trim();
+      const w = document.getElementById('admin-word').value.trim().toUpperCase();
+      const c = document.getElementById('admin-color').value;
+
+      if (w.length < 4 || w.length > 6) {
+        alert('Please enter a 4, 5, or 6 letter word.');
+        return;
+      }
+
+      if (bgSourceMode === 'url') {
+        const urlVal = document.getElementById('admin-bg-url').value.trim();
+        if (urlVal) bgImage = urlVal;
+      }
+
+      guestName = g || 'Special Guest';
+      targetWord = w;
+      brandColor = c;
+      closeAdmin();
+      initGame();
+    }
+
+    document.getElementById('admin-color').addEventListener('input', (e) => {
+      document.getElementById('admin-color-hex').innerText = e.target.value.toUpperCase();
+    });
+
+    initGame();
+  </script>
+</body>
+</html>
