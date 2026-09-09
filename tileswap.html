@@ -7,9 +7,9 @@
   <style>
     :root {
       --brand-color: #ff0055;        /* Neon Pink Accent */
-      --color-correct: #ff0055;      /* Correct Position */
+      --color-correct: #ff0055;      /* Exact Position */
       --color-present: #00e5ff;      /* Wrong Position */
-      --color-absent: #2a2a2e;       /* Distractor/Incorrect */
+      --color-absent: #2a2a2e;       /* Distractor / Off */
       --color-border: #44444c;
       --color-bg: #0c0c0e;
     }
@@ -47,7 +47,7 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.15);
       width: 100%;
       max-width: 500px;
-      padding: 10px 45px;
+      padding: 8px 45px;
       position: relative;
       flex-shrink: 0;
     }
@@ -75,7 +75,6 @@
     #hidden-admin-trigger { position: absolute; top: 0; left: 0; width: 44px; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
     #hidden-reset-trigger { position: absolute; top: 0; right: 0; width: 44px; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
 
-    /* Game Container */
     #game-container {
       display: flex;
       flex-direction: column;
@@ -83,8 +82,8 @@
       justify-content: center;
       flex-grow: 1;
       width: 100%;
-      max-width: 500px;
-      gap: 20px;
+      max-width: 520px;
+      gap: 15px;
     }
 
     #stats-bar {
@@ -102,40 +101,73 @@
 
     #stats-bar span { color: var(--brand-color); }
 
-    /* Tile Rack */
-    #tile-rack {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      width: 100%;
-      padding: 10px;
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #888;
+      text-transform: uppercase;
+      margin-bottom: 2px;
     }
 
+    /* Active & Bench Racks */
+    .rack-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    .rack {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      min-height: 68px;
+      padding: 6px;
+      background: rgba(15, 15, 20, 0.5);
+      border-radius: 14px;
+      border: 1px dashed rgba(255,255,255,0.15);
+    }
+
+    #active-rack {
+      border: 2px solid var(--brand-color);
+      box-shadow: 0 0 15px rgba(255,0,85,0.15);
+      background: rgba(255, 0, 85, 0.05);
+    }
+
+    /* Draggable Tile */
     .tile {
-      width: clamp(48px, 13vw, 65px);
-      height: clamp(58px, 15vw, 75px);
+      width: clamp(44px, 12vw, 60px);
+      height: clamp(54px, 14vw, 70px);
       border: 2px solid var(--color-border);
       border-radius: 12px;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: clamp(1.5rem, 5vw, 2.2rem);
+      font-size: clamp(1.4rem, 4.5vw, 2rem);
       font-weight: 800;
       text-transform: uppercase;
       user-select: none;
-      background: rgba(25, 25, 32, 0.85);
+      background: rgba(28, 28, 36, 0.9);
       color: #ffffff;
-      cursor: pointer;
+      cursor: grab;
       backdrop-filter: blur(4px);
-      transition: all 0.2s ease;
+      transition: transform 0.15s, border-color 0.2s, background-color 0.2s;
       box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    .tile:active { cursor: grabbing; }
+
+    .tile.dragging {
+      opacity: 0.4;
+      transform: scale(0.95);
     }
 
     .tile.selected {
       border-color: #00e5ff;
       box-shadow: 0 0 15px #00e5ff;
-      transform: translateY(-8px) scale(1.05);
-      background: rgba(0, 229, 255, 0.15);
+      transform: translateY(-6px);
     }
 
     .tile[data-state="correct"] {
@@ -158,12 +190,13 @@
       color: #666666;
     }
 
-    /* Action Buttons */
+    /* Controls */
     .controls {
       display: flex;
       gap: 12px;
       width: 100%;
       max-width: 380px;
+      margin-top: 5px;
     }
 
     .btn-action {
@@ -273,18 +306,26 @@
   <div id="game-container">
     <div id="stats-bar">
       <div>TAKES: <span id="takes-count">0</span></div>
-      <div>SWAPS: <span id="swaps-count">0</span></div>
     </div>
 
-    <div id="tile-rack"></div>
+    <!-- Active Track (Target Line) -->
+    <div class="rack-container">
+      <div class="section-label">Active Track</div>
+      <div id="active-rack" class="rack"></div>
+    </div>
+
+    <!-- Bench (Reserve Tiles + Distractors) -->
+    <div class="rack-container">
+      <div class="section-label">Tile Reserve & Decoys</div>
+      <div id="bench-rack" class="rack"></div>
+    </div>
 
     <div class="controls">
-      <button class="btn-action btn-shuffle" onclick="shuffleTiles()">Shuffle</button>
+      <button class="btn-action btn-shuffle" onclick="shuffleBench()">Shuffle</button>
       <button class="btn-action btn-submit" onclick="submitTake()">Submit Take</button>
     </div>
   </div>
 
-  <!-- End Game Modal -->
   <div id="result-modal" class="modal-overlay">
     <div class="modal-content">
       <h3 id="result-title">TRACK SOLVED!</h3>
@@ -297,7 +338,6 @@
     </div>
   </div>
 
-  <!-- Producer Panel Modal -->
   <div id="admin-modal" class="modal-overlay">
     <div class="modal-content">
       <h3>Producer Panel</h3>
@@ -361,11 +401,17 @@
     let bgImage = urlParams.get('bg') || '';
     let bgSourceMode = 'file';
 
-    let currentTiles = [];
-    let selectedIndex = null;
+    let wordLength = targetWord.length;
+    let activeTiles = [];
+    let benchTiles = [];
+    let selectedTileRef = null; // For tap-swap backup
+    let draggedTileIndex = null;
+    let draggedSourceRack = null;
+
     let takesCount = 0;
-    let swapsCount = 0;
     let isGameOver = false;
+
+    const distractorPool = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'M', 'P', 'Q', 'S', 'T', 'W', 'X', 'Z'];
 
     function applyBrandColor(color) {
       document.documentElement.style.setProperty('--brand-color', color);
@@ -382,106 +428,209 @@
     }
 
     function initGame() {
+      wordLength = targetWord.length;
       takesCount = 0;
-      swapsCount = 0;
       isGameOver = false;
-      selectedIndex = null;
+      selectedTileRef = null;
 
       document.getElementById('takes-count').innerText = takesCount;
-      document.getElementById('swaps-count').innerText = swapsCount;
       document.getElementById('subtitle').innerText = `KOJI VS. ${guestName}`;
 
       applyBrandColor(brandColor);
       applyBackgroundImage(bgImage);
 
-      // Create guaranteed scrambled array
-      currentTiles = targetWord.split('');
-      do {
-        currentTiles.sort(() => Math.random() - 0.5);
-      } while (currentTiles.join('') === targetWord);
+      // Generate 3 unique distractor letters not in target word
+      const targetChars = targetWord.split('');
+      const distractors = [];
+      while (distractors.length < 3) {
+        const randomChar = distractorPool[Math.floor(Math.random() * distractorPool.length)];
+        if (!targetChars.includes(randomChar) && !distractors.includes(randomChar)) {
+          distractors.push(randomChar);
+        }
+      }
 
-      renderRack();
+      // Mix all letters
+      const allPool = [...targetChars, ...distractors].sort(() => Math.random() - 0.5);
+
+      // Distribute: Put 3 random letters in Active, rest in Bench
+      activeTiles = allPool.slice(0, 3);
+      benchTiles = allPool.slice(3);
+
+      renderRacks();
       closeResult();
     }
 
-    function renderRack() {
-      const rack = document.getElementById('tile-rack');
-      rack.innerHTML = '';
+    function renderRacks() {
+      const activeRackEl = document.getElementById('active-rack');
+      const benchRackEl = document.getElementById('bench-rack');
 
-      currentTiles.forEach((letter, index) => {
-        const tile = document.createElement('div');
-        tile.className = 'tile';
-        tile.innerText = letter;
+      activeRackEl.innerHTML = '';
+      benchRackEl.innerHTML = '';
 
-        if (index === selectedIndex) {
-          tile.classList.add('selected');
+      // Render Active Rack
+      activeTiles.forEach((letter, index) => {
+        const tile = createTileElement(letter, index, 'active');
+        activeRackEl.appendChild(tile);
+      });
+
+      // Render Bench Rack
+      benchTiles.forEach((letter, index) => {
+        const tile = createTileElement(letter, index, 'bench');
+        benchRackEl.appendChild(tile);
+      });
+
+      setupRackDragEvents(activeRackEl, 'active');
+      setupRackDragEvents(benchRackEl, 'bench');
+    }
+
+    function createTileElement(letter, index, rackType) {
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.innerText = letter;
+      tile.setAttribute('draggable', 'true');
+      tile.dataset.index = index;
+      tile.dataset.rack = rackType;
+
+      if (selectedTileRef && selectedTileRef.rack === rackType && selectedTileRef.index === index) {
+        tile.classList.add('selected');
+      }
+
+      // Drag Events
+      tile.addEventListener('dragstart', (e) => {
+        if (isGameOver) return;
+        draggedTileIndex = index;
+        draggedSourceRack = rackType;
+        tile.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', ''); // Firefox fix
+      });
+
+      tile.addEventListener('dragend', () => {
+        tile.classList.remove('dragging');
+      });
+
+      // Tap-Swap Fallback
+      tile.addEventListener('click', () => {
+        if (isGameOver) return;
+        handleTileTap(index, rackType);
+      });
+
+      return tile;
+    }
+
+    function setupRackDragEvents(rackEl, targetRackType) {
+      rackEl.addEventListener('dragover', (e) => {
+        e.preventDefault();
+      });
+
+      rackEl.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (isGameOver || draggedTileIndex === null) return;
+
+        // Determine drop index based on mouse position relative to target tile
+        const targetTile = e.target.closest('.tile');
+        let dropIndex = targetRackType === 'active' ? activeTiles.length : benchTiles.length;
+
+        if (targetTile) {
+          dropIndex = parseInt(targetTile.dataset.index, 10);
         }
 
-        tile.addEventListener('click', () => handleTileClick(index));
-        rack.appendChild(tile);
+        moveTile(draggedSourceRack, draggedTileIndex, targetRackType, dropIndex);
+        draggedTileIndex = null;
+        draggedSourceRack = null;
       });
     }
 
-    function handleTileClick(index) {
-      if (isGameOver) return;
+    function moveTile(fromRack, fromIndex, toRack, toIndex) {
+      let sourceArr = fromRack === 'active' ? activeTiles : benchTiles;
+      let targetArr = toRack === 'active' ? activeTiles : benchTiles;
 
-      if (selectedIndex === null) {
-        selectedIndex = index;
-      } else if (selectedIndex === index) {
-        selectedIndex = null;
-      } else {
-        // Swap tiles
-        const temp = currentTiles[selectedIndex];
-        currentTiles[selectedIndex] = currentTiles[index];
-        currentTiles[index] = temp;
-        selectedIndex = null;
-        swapsCount++;
-        document.getElementById('swaps-count').innerText = swapsCount;
+      const [item] = sourceArr.splice(fromIndex, 1);
+
+      // Enforce Active track maximum size limit (must match target word length)
+      if (toRack === 'active' && activeTiles.length >= wordLength && fromRack !== 'active') {
+        // Pop last item back to bench
+        const bumped = activeTiles.pop();
+        benchTiles.push(bumped);
       }
-      renderRack();
+
+      targetArr.splice(toIndex, 0, item);
+      selectedTileRef = null;
+      renderRacks();
     }
 
-    function shuffleTiles() {
+    function handleTileTap(index, rackType) {
+      if (!selectedTileRef) {
+        selectedTileRef = { index, rack: rackType };
+      } else if (selectedTileRef.rack === rackType && selectedTileRef.index === index) {
+        selectedTileRef = null;
+      } else {
+        // Swap or move between racks
+        const sourceArr = selectedTileRef.rack === 'active' ? activeTiles : benchTiles;
+        const targetArr = rackType === 'active' ? activeTiles : benchTiles;
+
+        const temp = sourceArr[selectedTileRef.index];
+        sourceArr[selectedTileRef.index] = targetArr[index];
+        targetArr[index] = temp;
+
+        selectedTileRef = null;
+      }
+      renderRacks();
+    }
+
+    function shuffleBench() {
       if (isGameOver) return;
-      currentTiles.sort(() => Math.random() - 0.5);
-      selectedIndex = null;
-      renderRack();
+      benchTiles.sort(() => Math.random() - 0.5);
+      selectedTileRef = null;
+      renderRacks();
     }
 
     function submitTake() {
       if (isGameOver) return;
 
+      if (activeTiles.length !== wordLength) {
+        alert(`Fill all ${wordLength} slots in the Active Track before submitting!`);
+        return;
+      }
+
       takesCount++;
       document.getElementById('takes-count').innerText = takesCount;
 
       const targetArr = targetWord.split('');
-      const tileElements = document.querySelectorAll('.tile');
-      const tileStates = Array(targetWord.length).fill('absent');
+      const activeTileEls = document.querySelectorAll('#active-rack .tile');
+      const benchTileEls = document.querySelectorAll('#bench-rack .tile');
+      const tileStates = Array(wordLength).fill('absent');
 
-      // Check exact positions
-      currentTiles.forEach((char, i) => {
+      // Check exact matches
+      activeTiles.forEach((char, i) => {
         if (char === targetArr[i]) {
           tileStates[i] = 'correct';
           targetArr[i] = null;
         }
       });
 
-      // Check present letters
-      currentTiles.forEach((char, i) => {
+      // Check partial matches
+      activeTiles.forEach((char, i) => {
         if (tileStates[i] !== 'correct' && targetArr.includes(char)) {
           tileStates[i] = 'present';
           targetArr[targetArr.indexOf(char)] = null;
         }
       });
 
-      // Apply state animations
-      tileElements.forEach((tile, i) => {
+      // Highlight Active Track
+      activeTileEls.forEach((tile, i) => {
         tile.setAttribute('data-state', tileStates[i]);
       });
 
-      if (currentTiles.join('') === targetWord) {
+      // Highlight Bench distractors (dim unused/incorrect letters)
+      benchTileEls.forEach((tile) => {
+        if (!targetWord.includes(tile.innerText)) {
+          tile.setAttribute('data-state', 'absent');
+        }
+      });
+
+      if (activeTiles.join('') === targetWord) {
         isGameOver = true;
-        setTimeout(() => showResult(true), 600);
+        setTimeout(() => showResult(true), 500);
       }
     }
 
@@ -493,7 +642,7 @@
 
       wordDisplay.innerText = targetWord;
       title.innerText = "TRACK SOLVED!";
-      msg.innerText = `${guestName} solved it in ${takesCount} take(s) and ${swapsCount} swap(s)!`;
+      msg.innerText = `${guestName} unscrambled the track in ${takesCount} take(s)!`;
 
       modal.style.display = 'flex';
     }
